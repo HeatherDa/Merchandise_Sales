@@ -61,7 +61,7 @@ def get_type_input(types):
 
 def get_table_input():
     while True:
-        name = input("1. merchandise table\n2. events table\n3. event sales table\n\nEnter your selection")
+        name = input("\n1. merchandise table\n2. events table\n3. event sales table\n\nEnter your selection")
         if name=='1':
             return "merchandise"
         elif name=='2':
