@@ -26,7 +26,7 @@ def create_merchandise_table():
                 ('Poster', 'Adajio cover', 100, 4.00, 1)]
 
         if len(rec)<1:  #If table is empty, add data
-            c.executemany('INSERT INTO merchandise VALUES (?,?,?,?,?)', items)
+            c.executemany('INSERT INTO merchandise (merch_Type, merch_Description, merch_Total_Ordered, merch_Cost, merch_Taxable) VALUES (?,?,?,?,?)', items)
             db.commit()  #save changes
 
     except sqlite3.Error:
@@ -48,40 +48,46 @@ def create_events_table():
                   ('Signing', '2018-03-15 14:30', '3030 Colton Way', 'New Olm', 'MN', '57382', 'Kaiser Tannenburg', '472-113-9157')]
 
         if len(rec) < 1:  # If table is empty, add data
-            c.executemany('INSERT INTO events VALUES (?,?,?,?,?,?,?,?)', events)
+            c.executemany('INSERT INTO events (event_Type, event_Date, event_Street, event_City, event_State, event_Zip, event_Contact, event_Contact_Phone) VALUES (?,?,?,?,?,?,?,?)', events)
             db.commit()  # save changes
 
     except sqlite3.Error as e:
         print('An error occurred.')
         traceback.print_exc()
 
-def salesTax(amount):
+def salesTax(price, total):
     """Sales tax owed assuming the user lives in MN"""
-    return (round((amount*7.375)/100),2)
+    return (round(((price*7.375)/100),2))*total
 
 
 def create_event_sales_table():
     """Create event_sales table"""
     try:
-        c.execute(
-            'CREATE TABLE if not exists event_sales (events_ID integer, merch_ID integer, sales_Total int,'
-            ' sales_Price real not null, sales_Tax real, PRIMARY KEY (events_ID, merch_ID)')
+        #delete_table()
+        sql='CREATE TABLE if not exists event_sales (events_ID integer not null, merch_ID integer not null, sales_Total integer, ' \
+            'sales_Price real not null, sales_Tax real, CONSTRAINT event_sales PRIMARY KEY (events_ID, merch_ID))'
+
+        c.execute(sql)
+            #'CREATE TABLE if not exists event_sales (events_ID integer, merch_ID integer, sales_Total integer, sales_Price real not null, sales_Tax real)')
         c.execute('SELECT * FROM event_sales')
         rec = c.fetchall()
+        a=salesTax(10.00,8)
         sales = [(1, 1, 5, 10.00, 0.00),
                  (1, 2, 4, 10.00, 0.00),
-                 (1, 3, 8, 10.00, salesTax(10.00)),
-                 (1, 4, 2, 10.00, salesTax(10.00)),
-                 (1, 5, 3, 8.00, salesTax(8.00)),
-                 (1, 6, 1, 8.00, salesTax(8.00))]
+                 (1, 3, 8, 10.00, salesTax(10.00,8)),
+                 (1, 4, 2, 10.00, salesTax(10.00,2)),
+                 (1, 5, 3, 8.00, salesTax(8.00,3)),
+                 (1, 6, 1, 8.00, salesTax(8.00,1))]
+
 
         if len(rec) < 1:  # If table is empty, add data
-            c.executemany('INSERT INTO merchandise VALUES (?,?,?,?,?)', sales)
+            c.executemany('INSERT INTO event_sales (events_ID, merch_ID, sales_Total, sales_Price, sales_Tax) VALUES (?,?,?,?,?)', sales)
             db.commit()  # save changes
 
     except sqlite3.Error as e:
         print('An error occurred.')
         traceback.print_exc()
+        traceback.print_exception()
 
 
 def add_item_type():
@@ -250,7 +256,7 @@ def view_table():
     name1=''
     while True:
         name=ui.get_table_input()
-        if name =='1':
+        if name =='merchandise':
             records=c.execute('SELECT * FROM merchandise')
             c.row_factory=sqlite3.Row #so that you can access columns by name
             ui.show_message("Merchandise Table")
@@ -258,7 +264,7 @@ def view_table():
             for record in records: #TODO: copy this function and usage for following elifs
                 merch_record_format(record)
             return
-        elif name =='2':
+        elif name =='events':
             records=c.execute('SELECT * FROM events')
             c.row_factory=sqlite3.Row #so that you can access columns by name
             ui.show_message("Events Table")
@@ -266,7 +272,7 @@ def view_table():
             for record in records:
                 event_record_format(record)
             return
-        elif name =='3':
+        elif name =='event_sales':
             records=c.execute('SELECT * FROM event_sales')
             c.row_factory=sqlite3.Row #so that you can access columns by name
             ui.show_message('Event Sales Table')

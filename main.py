@@ -32,6 +32,9 @@ def use_choice(choice):
 def main():
     choice=None
     #delete_juggler_table()
+    merchandising_DB.create_merchandise_table()
+    merchandising_DB.create_events_table()
+    merchandising_DB.create_event_sales_table()
 
     while choice !='6':
         choice=ui.display_menu()
