@@ -98,7 +98,7 @@ def get_date_input():
             print('Please copy the format exactly')
 
 def merchandise_header():
-    show_message("Item ID: \tType: \tDescription: \t\t\tTotal Ordered: \tCost: \tTaxable?")
+    show_message("Item ID: \tType: \t\tDescription: \t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
 
 def events_header():
     show_message("Event ID: \t Event Type: \t Event Address: \t\t\tName of Contact: \t\tContact Phone: ")

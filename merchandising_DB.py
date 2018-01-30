@@ -9,7 +9,7 @@ db = sqlite3.connect('merchandising_db.db') #Creates db file or opens if it alre
 c=db.cursor() #Cursor object
 item_types=['T-Shirt', 'CD', 'Poster']
 event_types=['Concert', 'Signing']
-c.row_factory=sqlite3.Row
+#c.row_factory=sqlite3.Row
 
 def create_merchandise_table():
     #Create merchandise table
@@ -261,7 +261,7 @@ def view_table():
             c.row_factory=sqlite3.Row #so that you can access columns by name
             ui.show_message("Merchandise Table")
             ui.merchandise_header()
-            for record in records: #TODO: copy this function and usage for following elifs
+            for record in records:
                 merch_record_format(record)
             return
         elif name =='events':
@@ -594,23 +594,51 @@ def update_entry():
 def close_database():
     db.close()
 
+def add_spaces(str, col):
+    if col =='merch_Description':
+        length=len(str)
+        dif=30-length
+        str=str+(dif*" ")+"\t"
+        return str
+    elif col=='address':
+        str=str+' \t'
+        return str
+    else:
+        length=len(str)
+        dif=10-length
+        str=str+(dif*" ")+" \t"
+        return str
+
 def merch_record_format(record):
     taxable=''
     if record['merch_Taxable']==0:
         taxable='False'
     else:
         taxable='True'
-    ui.show_message((record["merch_ID"], "\t", record["merch_Type"] + "\t" + record["merch_Description"] + "\t",
-                     record["merch_Total_Ordered"], "\t", record["merch_Cost"], "\t" + taxable))
 
+    ui.show_message(add_spaces(str(record["merch_ID"]),'merch_ID')+
+                    add_spaces(str(record["merch_Type"]),'merch_Type') +
+                    add_spaces(str(record["merch_Description"]),'merch_Description') +
+                    add_spaces(str(record["merch_Total_Ordered"]),'merch_Total_Ordered')+
+                    add_spaces(str(record["merch_Cost"]),'merch_Cost') + taxable)
+#TODO: Figure out why above works, but bellow two functions don't work.  They should work the same way....
 def event_record_format(record):
-    address = str((record['event_Street'] + ", " + record['event_State'] + ", ", record['event_Zip'], "\t"))
-    ui.show_message((record["event_ID"], "\t"+ record["event_Type"] + "\t" , record["event_Date"] , "\t"+
-                     address+"\t"+record["event_Contact"]+"\t"+record["event_Contact_Phone"]))
+    address = str(record['event_Street']+ ", " + record['event_City'] +", " + record['event_State'] + ", "+ record['event_Zip']+ " \t ")
+    print (address)
+    ui.show_message(add_spaces(str(record["event_ID"]),'event_ID')+
+                    add_spaces(str(record["event_Type"]),'event_Type') +
+                    add_spaces(str(record["event_Date"]),'event_Date')+
+                    add_spaces(address, 'address')+
+                    add_spaces((record["event_Contact"]),'event_Contact')+
+                    add_spaces(str(record["event_Contact_Phone"]),'event_Contact_Phone'))
 
 def event_sales_record_format(record):
-    ui.show_message((record["event_ID"], "\t", record["merch_ID"], "\t", record["sales_Total"], "\t",
-                     record["sales_Price"], ", ", record["sales_Tax"]))
+    ui.show_message(add_spaces(str(record["event_ID"]),"event_ID")+
+                    add_spaces(str(record["merch_ID"]),"merch_ID")+
+                    add_spaces(str(record["sales_Total"]),"sales_Total")+
+                    add_spaces(str(record["sales_Price"]),"sales_Price")+
+                    add_spaces(str(record["sales_Tax"]),"sales_Tax"))
+
 
 def add_record():
     table=ui.get_table_input()
@@ -620,3 +648,4 @@ def add_record():
         new_event()
     elif table=='event_sales':
         new_event_sales()
+
