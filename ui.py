@@ -98,13 +98,13 @@ def get_date_input():
             print('Please copy the format exactly')
 
 def merchandise_header():
-    show_message("Item ID: \tType: \t\tDescription: \t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
+    show_message("Item ID: \tType: \t\tDescription: \t\t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
 
 def events_header():
-    show_message("Event ID: \t Event Type: \t Event Address: \t\t\tName of Contact: \t\tContact Phone: ")
+    show_message("Event ID: \tType: \t\tDate: \t\t\t\tAddress: \t\t\t\t\t\t\t\t\tContact: \t\t\t\t\tContact Phone: ")
 
 def event_sales_header():
-    show_message("Event ID: \t Item ID: \t Total Sold: \t Sale Price: \t Sale Tax Collected: ")
+    show_message("Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax Collected: ")
 
 def inventory_Header():
-    show_message("Item ID: \t Total Number Sold: \t Total Purchased: \t Remaining Inventory: ")
+    show_message("Item ID: \tTotal Number Sold: \tTotal Purchased: \tRemaining Inventory: ")

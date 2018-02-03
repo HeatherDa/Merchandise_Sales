@@ -17,7 +17,7 @@ merch_Type: text, type of object (T-Shirt, CD, Poster) #Should do something to t
 merch_Description: text, used to clarify which of several T-Shirts is being described
 merch_Total_Ordered: int, total of given item ordered to date #Should really have another value of recieved, so we know how many we've gotten of those that were ordered
 merch_Cost: float, how much each item cost when purchased(what should we do if price changes? Make a new item, with description saying 2nd run?)
-??merch_Taxable: int (0 or 1 for False or True) could include this (would make program more robust)
+merch_Taxable: int (0 or 1 for False or True) could include this (would make program more robust)
 
 event table:
 event_ID: primary key, autoincremented int

@@ -601,7 +601,29 @@ def add_spaces(str, col):
         str=str+(dif*" ")+"\t"
         return str
     elif col=='address':
-        str=str+' \t'
+        length=len(str)
+        dif=40-length
+        str=str+(dif*" ")+'\t'
+        return str
+    elif col=='event_Contact':
+        length=len(str)
+        dif=25-length
+        str=str+(dif*" ")+'\t'
+        return str
+    elif col=='sales_Total':
+        length=len(str)
+        dif=14-length
+        str=str+(dif*" ")+" \t"
+        return str
+    elif (col=='sales_Price') | (col=='sales_Tax'):
+        length = len(str)
+        dif = 14 - length
+        str = str + (dif * " ") + " \t"
+        return str
+    elif col=='merch_Total_Ordered':
+        length = len(str)
+        dif = 10 - length
+        str = str + (dif * " ") + " \t\t"
         return str
     else:
         length=len(str)
@@ -610,35 +632,40 @@ def add_spaces(str, col):
         return str
 
 def merch_record_format(record):
-    taxable=''
-    if record['merch_Taxable']==0:
-        taxable='False'
-    else:
-        taxable='True'
+    '''Format record for display'''
+    k=record.keys()
+    a=""
+    for c in k:
+        if c!='merch_Taxable':
+            a=a+add_spaces(str(record[c]), str(c))
+        elif c=='merch_Taxable':
+            if (str(record[c]))=='0':
+                a=a+"Tax Exempt"
+            elif (str(record[c]))=='1':
+                a=a+"Taxable"
+    ui.show_message(a)
 
-    ui.show_message(add_spaces(str(record["merch_ID"]),'merch_ID')+
-                    add_spaces(str(record["merch_Type"]),'merch_Type') +
-                    add_spaces(str(record["merch_Description"]),'merch_Description') +
-                    add_spaces(str(record["merch_Total_Ordered"]),'merch_Total_Ordered')+
-                    add_spaces(str(record["merch_Cost"]),'merch_Cost') + taxable)
-#TODO: Figure out why above works, but bellow two functions don't work.  They should work the same way....
 def event_record_format(record):
+    '''Format record for display'''
     address = str(record['event_Street']+ ", " + record['event_City'] +", " + record['event_State'] + ", "+ record['event_Zip']+ " \t ")
-    print (address)
-    ui.show_message(add_spaces(str(record["event_ID"]),'event_ID')+
-                    add_spaces(str(record["event_Type"]),'event_Type') +
-                    add_spaces(str(record["event_Date"]),'event_Date')+
-                    add_spaces(address, 'address')+
-                    add_spaces((record["event_Contact"]),'event_Contact')+
-                    add_spaces(str(record["event_Contact_Phone"]),'event_Contact_Phone'))
+
+    k=record.keys()
+    a=""
+    for n in k:
+        if (n != "event_Street") & (n!="event_City")&(n!="event_State")&(n!="event_Zip"):
+            a=a+add_spaces(str(record[n]), str(n))
+        elif n == "event_Street":
+            a=a+add_spaces(address, 'address')
+    ui.show_message (a)
+
 
 def event_sales_record_format(record):
-    ui.show_message(add_spaces(str(record["event_ID"]),"event_ID")+
-                    add_spaces(str(record["merch_ID"]),"merch_ID")+
-                    add_spaces(str(record["sales_Total"]),"sales_Total")+
-                    add_spaces(str(record["sales_Price"]),"sales_Price")+
-                    add_spaces(str(record["sales_Tax"]),"sales_Tax"))
-
+    '''Format record for display'''
+    k=record.keys()
+    a=""
+    for c in k:
+        a=a+add_spaces(str(record[c]), str(c))
+    ui.show_message(a)
 
 def add_record():
     table=ui.get_table_input()
@@ -648,4 +675,3 @@ def add_record():
         new_event()
     elif table=='event_sales':
         new_event_sales()
-
