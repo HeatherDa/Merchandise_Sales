@@ -20,8 +20,9 @@ def show_message(message):
     print(message)
 
 def get_numeric_input(message):
-    n=input(message)
+
     while True:
+        n=input(message)
         if DataValidation.is_int(n):
             return int(n)
         elif DataValidation.is_Float(n):
@@ -34,34 +35,35 @@ def get_input(message):
         Return only good strings."""
     s= input(message)
     ok=""
-    while True:
+    while len(ok) != len(s):
         for char in s:
             if char.isalnum():
                 ok=ok+char
-            elif char in '/,. ':
+            elif char in '/,.- ':
                 ok=ok+char
             else:
                 show_message("This string contains a forbidden character. Try again.")
                 ok=""
-        if len(ok)==s:
+        if len(ok)==len(s):
             return ok
 
 
 def get_type_input(types):
     message=""
     for i in types:
-        option=str(types[i]+1) + ': ' + i + "\n"
+        option=str(types.index(i)+1) + '. ' + i + "\n"
         message=message+option
 
     while True: #Accept only valid input
         print(message)
-        choice = input("\nPlease enter the number of your selection.")
+        #TODO: find out if they need to input a new type of item
+        choice = input("\nEnter your selection: ")
         if DataValidation.is_int(choice):
             return types[int(choice)-1]
 
 def get_table_input():
     while True:
-        name = input("\n1. merchandise table\n2. events table\n3. event sales table\n\nEnter your selection")
+        name = input("\n1. merchandise table\n2. events table\n3. event sales table\n\nEnter your selection: ")
         if name=='1':
             return "merchandise"
         elif name=='2':
@@ -101,7 +103,7 @@ def merchandise_header():
     show_message("Item ID: \tType: \t\tDescription: \t\t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
 
 def events_header():
-    show_message("Event ID: \tType: \t\tDate: \t\t\t\tAddress: \t\t\t\t\t\t\t\t\tContact: \t\t\t\t\tContact Phone: ")
+    show_message("Event ID: \tType: \t\tDate: \t\t\t\t\tAddress: \t\t\t\t\t\t\t\t\tContact: \t\t\t\t\tContact Phone: ")
 
 def event_sales_header():
     show_message("Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax Collected: ")
