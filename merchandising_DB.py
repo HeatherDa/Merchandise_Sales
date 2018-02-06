@@ -150,8 +150,6 @@ def get_SalesTax(choice):
             return
 
         elif choice=='total':
-            #data_since=timedelta(0)
-            #data_before=timedelta(0)
             year=ui.get_numeric_input("Enter the year you want to know sales tax information about (YYYY): ")
             current_year=datetime.today().strftime("%Y")
             if year==current_year:
@@ -612,7 +610,7 @@ def search_menu():
 
     elif choice=='6': #TODO event sales no longer has column for sales tax. adjust function.
         #Get list of items by profit
-        ui.show_message("\n1. Profit for a specific item ID\n2. Total Profit per item\n3. Total profit to date\n")
+        ui.show_message("\n1. Profit for a specific item ID\n2. Total Profit per item\n3. Total profit this year\n")
         choice=ui.get_numeric_input("Enter your selection: ")
         if choice==1:
             merch_ID=ui.get_numeric_input("\nWhat item ID do you want to use?") #((price*7.375)/100)*total
@@ -653,11 +651,18 @@ def search_menu():
                         record['sales_Price'], record['sales_Total']))
                 ui.show_message(add_spaces(str(record['merch_ID']),'merch_ID') + add_spaces(str(record['merch_Type']),'merch_Type') + add_spaces(str(record['merch_Description']),'merch_Description')+profit)
         elif choice==3:
-            sql='SELECT merchandise.merch_ID, SUM(((event_sales.sales_Price-merchandise.merch_Cost)*event_sales.sales_Total)-event_sales.sales_Tax)' \
-                'FROM merchandise INNER JOIN merchandise.merch_ID=event_sales.merch_ID' \
-                'GROUP BY merchandise.merchID'
+            current_year = datetime.today().strftime("%Y")
+            data_since = (str(current_year) + "-01-01 01:01")
+
+            sql='SELECT merchandise.merch_ID, sales_Price, merch_Cost, sales_Total, event_State, merch_Taxable, merch_Type, merch_Description, event_Date ' \
+                  'FROM merchandise ' \
+                  'INNER JOIN event_sales ON merchandise.merch_ID=event_sales.merch_ID ' \
+                  'INNER JOIN events ON event_sales.event_ID=events.event_ID ' \
+                  'WHERE event_Date > ? ' \
+                  'ORDER BY event_Date '
+
+            records = c.execute(sql,(data_since,))
             c.row_factory = sqlite3.Row
-            records = c.execute(sql)
             total=0
             for r in records:
                 total=total+r[1]#should add sums for each item together
