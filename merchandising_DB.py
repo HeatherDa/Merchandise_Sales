@@ -473,16 +473,29 @@ def get_from_event_sales(e_ID, m_ID, value):
                 r=result['sales_Price']
             return r
         elif value=='tax':
-            t=get_from_merch(m_ID,'taxable')
-            s=get_from_events(e_ID, 'state')
-            tax=0.00
-            if t ==1:
-                if s !='MN':
-                    for result in results:
-                        tax=salesTax(result['sales_Price'],result['sales_Total'])
-                    return tax
-            elif t==0:
+            c.execute('SELECT * FROM event_sales WHERE event_ID=? AND merch_ID=?', (e_ID, m_ID,))
+            ro = c.fetchone()
+            t = get_from_merch(m_ID, 'taxable')
+            s = get_from_events(e_ID, 'state')
+            pri = ro[2]
+            tot = ro[3]
+            tax = salesTax(pri, tot)
+            if (t) & (s == 'MN'):
                 return tax
+            else:
+                return 0.00
+                #Don't know why the bellow code doesn't work.  It just skips the contents of the inner most for loop and returns none.
+            # t=get_from_merch(m_ID,'taxable')
+            # s=get_from_events(e_ID, 'state')
+            # tax=0.00
+            # if t ==True:
+            #     if s =='MN':
+            #         for result in results:
+            #             tax=salesTax(result['sales_Price'],result['sales_Total'])
+            #         return tax
+            # elif t==False:
+            #     return tax
+
     except sqlite3.Error:
         ui.show_message("An error occurred while searching for "+value+".")
         traceback.print_exc()
@@ -556,7 +569,7 @@ def search_menu():
     elif choice=='4':
         #Get items by quantity in inventory
         par=ui.get_numeric_input("Return items where remaining inventory is less than: ")
-        #I tested the following in Access, but not sure if it works here.
+        #I tested the following in Access, but it doesn't seem to work here, so have to do calculations seperately.
         """sql= 'SELECT merchandise.merch_ID, SUM(event_sales.sales_Total) AS items_sold, merchandise.merch_Total_Ordered, ' \
              '(merch_Total_Ordered-SUM(event_sales.sales_Total)) AS Remaining_Inventory ' \
              'FROM merchandise INNER JOIN event_sales on event_sales.merch_ID=merchandise.merch_ID ' \
@@ -566,11 +579,11 @@ def search_menu():
               'FROM event_sales' \
               'INNER JOIN merchandise ON merchandise.merch_ID=event_sales.merch_ID' \
               'GROUP BY merchandise.merch_ID, merchandise.merch_Total_Ordered'"""
-        #TODO: WHY THE FUCK DOESN'T THIS RETURN AN ENTRY FOR EACH unique merch_ID in event_sales?  It does everywhere else I've used this query.
-        sql3= 'SELECT merchandise.merch_ID, SUM(sales_Total)' \
+
+        sql3= 'SELECT merchandise.merch_ID, SUM(sales_Total) ' \
               'FROM event_sales ' \
               'JOIN merchandise ON merchandise.merch_ID = event_sales.merch_ID ' \
-              'GROUP BY merchandise.merch_ID'
+              'GROUP BY merchandise.merch_ID '
 
         c.execute(sql3)
         a=c.fetchall()
@@ -582,27 +595,25 @@ def search_menu():
             if rem<par:
                 inventory_record_format([i[0],sold,order,rem])
 
-        #TODO: Why doesn't the bellow code work here when it works everywhere else in my code?
-        '''    
-        records=c.execute(sql3)
-        c.row_factory=sqlite3.Row
-        k=0
-        for r in records:
-            k=len(r.keys()) #Why does this return 2 when 6 entries exist?
-        print("There are ",k," many results from this querry")
-        ui.inventory_Header()
-
-        for record in records: #should be able to do this stuff with sql, but couldn't get it to work.
-            print(record.keys())
-            sold=record['SUM(sales_Total)']
-            order=get_from_merch(record['merch_ID'],'ordered')
-            #print(sold, " ", order)
-            if (order-sold)<par:
-                print(order-sold)
-                inventory_record_format(record)
-            else:
-                print(order-sold, " is not smaller than ", par)
-        '''
+        #Why doesn't the bellow code work here when it works everywhere else?
+        # records=c.execute(sql3)
+        # c.row_factory=sqlite3.Row
+        # k=0
+        # for r in records:
+        #     k=len(r.keys()) #Why does this return 2 when 6 entries exist?
+        # print("There are ",k," many results from this querry")
+        # ui.inventory_Header()
+        #
+        # for record in records: #should be able to do this stuff with sql, but couldn't get it to work.
+        #     print(record.keys())
+        #     sold=record['SUM(sales_Total)']
+        #     order=get_from_merch(record['merch_ID'],'ordered')
+        #     #print(sold, " ", order)
+        #     if (order-sold)<par:
+        #         print(order-sold)
+        #         inventory_record_format(record)
+        #     else:
+        #         print(order-sold, " is not smaller than ", par)
 
     elif choice=='5':
         #Get Total Sales Tax Owed for year to date
@@ -672,15 +683,32 @@ def search_menu():
         #Get items sold by event_ID
         e_id=ui.get_numeric_input("Enter the event id for which you would like to search: ")
         sql="SELECT * " \
-            "FROM event_sales" \
-            "WHERE event_ID=?"
-        c.row_factory=sqlite3.Row
-        records=c.execute(sql,e_id)
+            "FROM event_sales " \
+            "WHERE event_ID = ? " \
+            "ORDER BY event_ID "
+
+        c.execute(sql,(e_id,))
+
+
+        a=c.fetchall()
+        ui.event_sales_header()
+        for i in a:
+            t = get_from_event_sales(i[0], i[1], 'tax')
+            tax="%.2f" % t
+            ui.show_message(add_spaces(str(i[0]),'event_ID')+add_spaces(str(i[1]),'merch_ID')+add_spaces(str(i[2]),'sales_Total')+add_spaces(str(i[3]),'sales_Price')+str(tax))
+
+
+        '''c.row_factory = sqlite3.Row
+
+        for i in records:
+            print(i.keys())
+            
+            print(t)
+
         ui.event_sales_header()
         for record in records:
-            t=get_from_event_sales(e_id,record['merch_ID'],'tax')
-            event_sales_record_format(record,t)
 
+            event_sales_record_format(record, t)'''
 
 
 
