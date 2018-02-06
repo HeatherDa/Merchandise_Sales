@@ -3,13 +3,10 @@ import traceback
 import ui
 import DataValidation
 from datetime import datetime
-from datetime import timedelta
-
 
 db = sqlite3.connect('merchandising_db.db') #Creates db file or opens if it already exists
 c=db.cursor() #Cursor object
-item_types=['T-Shirt', 'CD', 'Poster']
-event_types=['Concert', 'Signing']
+
 #c.row_factory=sqlite3.Row
 
 def create_merchandise_table():
@@ -88,21 +85,28 @@ def create_event_sales_table():
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
-def add_item_type():
-    """Add new item type.  Appends item type to global item_types list"""
-    global item_types
-    type=ui.get_input("Enter the name of the new item type: ")
-    item_types.append(type)
+def get_types(table):
+    if table=='merchandise':
+        c.execute('SELECT DISTINCT merch_Type FROM merchandise')
+        a=c.fetchall()
+        types=[]
+        for ty in a:
+            types.append(ty)
+        return types
+    elif table=='events':
+        c.execute('SELECT DISTINCT event_Type FROM events')
+        a = c.fetchall()
+        types = []
+        for ty in a:
+            types.append(ty)
+        return types
 
-def add_event_type():
-    """Add new event type.  Appends event type to global event_types list"""
-    global event_types
-    type=ui.get_input("Enter the name of the new event type: ")
-    item_types.append(type)
+
 
 def new_item():
     """Add new item to merchandise table"""
     try:
+        item_types=get_types('merchandise')
         item=ui.get_type_input(item_types)
         description=ui.get_input("Please describe the item. (Example: 'white, blue logo' for a T-Shirt, or the title for a CD or Poster.): ")
         total_ordered=ui.get_numeric_input("How many items were ordered?")
@@ -502,7 +506,9 @@ def get_from_event_sales(e_ID, m_ID, value):
 
 def search_menu():
     choice=ui.get_search_menu_input()
-    if choice=='1':
+    if choice=='0':
+        return
+    elif choice=='1':
         table=ui.get_table_input()
 
         if table=='merchandise':
@@ -534,6 +540,7 @@ def search_menu():
         table=ui.get_numeric_input('1. merchandise table\n2.events table\n\nEnter your selection: ')
         if table==1:
             a=""
+            item_types=get_types('merchandise')
             for i in item_types:
                 a=a+" \n"+str(item_types.index(i)+1)+". "+str(i)
             ui.show_message(a)
@@ -546,6 +553,7 @@ def search_menu():
                 merch_record_format(record)
         elif table==2:
             a = ""
+            event_types=get_types('events')
             for i in event_types:
                 a = a + str(event_types.index(i) + 1) + ". " + str(i)+' \n'
             ui.show_message(a)
@@ -569,17 +577,6 @@ def search_menu():
     elif choice=='4':
         #Get items by quantity in inventory
         par=ui.get_numeric_input("Return items where remaining inventory is less than: ")
-        #I tested the following in Access, but it doesn't seem to work here, so have to do calculations seperately.
-        """sql= 'SELECT merchandise.merch_ID, SUM(event_sales.sales_Total) AS items_sold, merchandise.merch_Total_Ordered, ' \
-             '(merch_Total_Ordered-SUM(event_sales.sales_Total)) AS Remaining_Inventory ' \
-             'FROM merchandise INNER JOIN event_sales on event_sales.merch_ID=merchandise.merch_ID ' \
-             'GROUP BY merchandise.merch_ID, merchandise.merch_Total_Ordered' \
-             'HAVING (merch_Total_Ordered-SUM(event_sales.sales_Total))<?'
-        sql2= 'SELECT event_sales.merch_ID, SUM(sales_Total), merchandise.merch_Total_Ordered' \
-              'FROM event_sales' \
-              'INNER JOIN merchandise ON merchandise.merch_ID=event_sales.merch_ID' \
-              'GROUP BY merchandise.merch_ID, merchandise.merch_Total_Ordered'"""
-
         sql3= 'SELECT merchandise.merch_ID, SUM(sales_Total) ' \
               'FROM event_sales ' \
               'JOIN merchandise ON merchandise.merch_ID = event_sales.merch_ID ' \
@@ -594,26 +591,6 @@ def search_menu():
             rem=order-sold
             if rem<par:
                 inventory_record_format([i[0],sold,order,rem])
-
-        #Why doesn't the bellow code work here when it works everywhere else?
-        # records=c.execute(sql3)
-        # c.row_factory=sqlite3.Row
-        # k=0
-        # for r in records:
-        #     k=len(r.keys()) #Why does this return 2 when 6 entries exist?
-        # print("There are ",k," many results from this querry")
-        # ui.inventory_Header()
-        #
-        # for record in records: #should be able to do this stuff with sql, but couldn't get it to work.
-        #     print(record.keys())
-        #     sold=record['SUM(sales_Total)']
-        #     order=get_from_merch(record['merch_ID'],'ordered')
-        #     #print(sold, " ", order)
-        #     if (order-sold)<par:
-        #         print(order-sold)
-        #         inventory_record_format(record)
-        #     else:
-        #         print(order-sold, " is not smaller than ", par)
 
     elif choice=='5':
         #Get Total Sales Tax Owed for year to date
@@ -696,22 +673,6 @@ def search_menu():
             t = get_from_event_sales(i[0], i[1], 'tax')
             tax="%.2f" % t
             ui.show_message(add_spaces(str(i[0]),'event_ID')+add_spaces(str(i[1]),'merch_ID')+add_spaces(str(i[2]),'sales_Total')+add_spaces(str(i[3]),'sales_Price')+str(tax))
-
-
-        '''c.row_factory = sqlite3.Row
-
-        for i in records:
-            print(i.keys())
-            
-            print(t)
-
-        ui.event_sales_header()
-        for record in records:
-
-            event_sales_record_format(record, t)'''
-
-
-
 
 def update_entry():
     '''Update a record from any table'''

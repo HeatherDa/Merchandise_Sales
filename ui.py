@@ -1,4 +1,5 @@
 import DataValidation
+import merchandising_DB
 
 def display_menu():
     option=input("\n1. Display table\n2. Update Record\n3. Add New Record\n4. Delete Record\n5. Search\n6. Quit\nEnter selection: ")
@@ -31,15 +32,16 @@ def get_numeric_input(message):
             print("Please only use numeric characters (Decimals are okay.)")
 
 def get_input(message):
-    """check string for non alphanumeric characters, leaving in '/' , '.', or ',' for phone, date, and descriptions.
+    """check string for non alphanumeric characters, leaving in these"/,.-:'" for phone, date, and descriptions.
         Return only good strings."""
-    s= input(message)
+
     ok=""
-    while len(ok) != len(s):
+    while True:
+        s= input(message)
         for char in s:
             if char.isalnum():
                 ok=ok+char
-            elif char in '/,.- ':
+            elif char in '/,.-: ':
                 ok=ok+char
             else:
                 show_message("This string contains a forbidden character. Try again.")
@@ -50,16 +52,26 @@ def get_input(message):
 
 def get_type_input(types):
     message=""
+    count=0
     for i in types:
         option=str(types.index(i)+1) + '. ' + i + "\n"
         message=message+option
-
+        count=count+1
+    message=message+"Enter 0 to add a new type\n"
     while True: #Accept only valid input
         print(message)
-        #TODO: find out if they need to input a new type of item
-        choice = input("\nEnter your selection: ")
-        if DataValidation.is_int(choice):
-            return types[int(choice)-1]
+        choice = input("Enter your selection: ")
+        if (DataValidation.is_int(choice)):
+            if  choice=='0': #if user wants to add a new type
+                if 'CD' in types: #Basically checking for which type list to add it to.
+                    t=get_input("Enter the new item Type: ")
+                    return t
+                else:
+                    t=get_input("Enter the new event Type: ")
+                    return t
+
+            elif int(choice)<count:
+                return types[int(choice)-1]
 
 def get_table_input():
     while True:
@@ -75,8 +87,8 @@ def get_search_menu_input():
     while True:
         choice=input("1. Get Record by ID \n2. Get Record by Type \n3. Get Events sorted by Date \n"
                      "4. Get items by quantity in inventory \n5. Get Total Sales Tax Owed for a given year \n"
-                     "6. Get list of items by profit \n7. Get items sold by event_ID\n\nEnter your selection: ")
-        if choice in ('1234567'):
+                     "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\nEnter your selection: ")
+        if choice in ('12345678'):
             return choice
 def get_date_input():
     d=input("Please enter the date and time using YYYY-MM-DD HH:MM format: ")

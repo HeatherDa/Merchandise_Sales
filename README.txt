@@ -33,7 +33,7 @@ event_sales table:
 event_ID & merch_ID: combined primary key
 sales_Total: int, how many of the merchID item were sold at this event
 sales_Price: float, how much was it sold for at that event (price could change due to special discounts or something)
-sales_Tax: float, how much sales tax collected? (only collect in home state) Assumes homestate is MN
+sales_Tax: Calculated for display, not stored as part of table.  Assumes MN is home state.
 
 menu:
 1. Show table
