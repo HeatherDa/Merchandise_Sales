@@ -32,7 +32,8 @@ def use_choice(choice):
 def main():
     choice=None
     #delete_juggler_table()
-    merchandising_DB.delete_table()
+
+    #merchandising_DB.delete_table()
 
     merchandising_DB.create_merchandise_table()
     merchandising_DB.create_events_table()

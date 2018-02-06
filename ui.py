@@ -74,12 +74,12 @@ def get_table_input():
 def get_search_menu_input():
     while True:
         choice=input("1. Get Record by ID \n2. Get Record by Type \n3. Get Events sorted by Date \n"
-                     "4. Get items by quantity in inventory \n5. Get Total Sales Tax Owed for year to date \n"
+                     "4. Get items by quantity in inventory \n5. Get Total Sales Tax Owed for a given year \n"
                      "6. Get list of items by profit \n7. Get items sold by event_ID\n\nEnter your selection: ")
         if choice in ('1234567'):
             return choice
 def get_date_input():
-    d=input("Please enter the date and time using this format YYYY-MM-DD HH:MM.")
+    d=input("Please enter the date and time using YYYY-MM-DD HH:MM format: ")
     da=d.split(' ')
     count=0
     count2=0
@@ -109,4 +109,4 @@ def event_sales_header():
     show_message("Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax Collected: ")
 
 def inventory_Header():
-    show_message("Item ID: \tTotal Number Sold: \tTotal Purchased: \tRemaining Inventory: ")
+    show_message("Item ID: \tItems Sold: \tItems Purchased: \tItems Remaining: ")

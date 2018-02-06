@@ -1,8 +1,8 @@
 def is_Float(n):
     try:
-        float(n)
-        return True
-    except ValueError:
+        if float(n):
+            return True
+    except TypeError:
         return False
 
 def is_int(n):
