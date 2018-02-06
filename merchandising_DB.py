@@ -612,10 +612,10 @@ def search_menu():
 
     elif choice=='6': #TODO event sales no longer has column for sales tax. adjust function.
         #Get list of items by profit
-        ui.show_message("1. Profit for a specific item ID\n2. Total Profit per item\n3. Total profit to date")
+        ui.show_message("\n1. Profit for a specific item ID\n2. Total Profit per item\n3. Total profit to date\n")
         choice=ui.get_numeric_input("Enter your selection: ")
         if choice==1:
-            merch_ID=ui.get_numeric_input("What item ID do you want to use?") #((price*7.375)/100)*total
+            merch_ID=ui.get_numeric_input("\nWhat item ID do you want to use?") #((price*7.375)/100)*total
 
             sql='SELECT merchandise.merch_ID, sales_Price, merch_Cost, sales_Total, event_State, merch_Taxable ' \
                  'FROM merchandise ' \
@@ -634,14 +634,24 @@ def search_menu():
                     profit=str(((record['sales_Price'] - record['merch_Cost'])*record['sales_Total']) - salesTax(record['sales_Price'], record['sales_Total']))
                 ui.show_message(str(merch_ID)+ "\t \t \t" + profit)
         elif choice==2:
-            sql='SELECT merchandise.merch_ID, SUM(((event_sales.sales_Price-merchandise.merch_Cost)*event_sales.sales_Total)-event_sales.sales_Tax) ' \
-                'FROM merchandise INNER JOIN merchandise.merch_ID=event_sales.merch_ID ' \
-                'GROUP BY merchandise.merchID '
-            c.row_factory = sqlite3.Row
+
+            sql = 'SELECT merchandise.merch_ID, sales_Price, merch_Cost, sales_Total, event_State, merch_Taxable, merch_Type, merch_Description ' \
+                  'FROM merchandise ' \
+                  'INNER JOIN event_sales ON merchandise.merch_ID=event_sales.merch_ID ' \
+                  'INNER JOIN events ON event_sales.event_ID=events.event_ID ' \
+                  'ORDER BY merchandise.merch_ID '
+
             records = c.execute(sql)
-            ui.show_message("Item ID\tProfit")
-            for r in records:
-                ui.show_message(str(r['merch_ID'], "\t", r['Profit']))
+            c.row_factory = sqlite3.Row
+
+            ui.show_message("\nItem ID \tItem Type \tItem Description \t\t\t\tProfit")
+            for record in records:
+                if (record['event_State'] != 'MN') | (record['merch_Taxable'] == 0):
+                    profit = str(((record['sales_Price'] - record['merch_Cost']) * record['sales_Total']))
+                else:
+                    profit = str(((record['sales_Price'] - record['merch_Cost']) * record['sales_Total']) - salesTax(
+                        record['sales_Price'], record['sales_Total']))
+                ui.show_message(add_spaces(str(record['merch_ID']),'merch_ID') + add_spaces(str(record['merch_Type']),'merch_Type') + add_spaces(str(record['merch_Description']),'merch_Description')+profit)
         elif choice==3:
             sql='SELECT merchandise.merch_ID, SUM(((event_sales.sales_Price-merchandise.merch_Cost)*event_sales.sales_Total)-event_sales.sales_Tax)' \
                 'FROM merchandise INNER JOIN merchandise.merch_ID=event_sales.merch_ID' \
