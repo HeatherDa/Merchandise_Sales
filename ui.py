@@ -1,7 +1,7 @@
 import DataValidation
-import merchandising_DB
 
 def display_menu():
+    '''Show Main Menu'''
     option=input("\n1. Display table\n2. Update Record\n3. Add New Record\n4. Delete Record\n5. Search\n6. Quit\nEnter selection: ")
     print("")
     if option=='1':
@@ -18,18 +18,19 @@ def display_menu():
         return '6'
 
 def show_message(message):
+    '''Display a given message'''
     print(message)
 
-def get_numeric_input(message):
-
+def get_numeric_input(message, t):
+    '''Get numeric input back in numeric format as either int or float'''
     while True:
         n=input(message)
-        if DataValidation.is_int(n):
+        if (DataValidation.is_int(n)) & (t=='i') :
             return int(n)
-        elif DataValidation.is_Float(n):
+        elif (DataValidation.is_Float(n)) & (t=='f'):
             return float(n)
         else:
-            print("Please only use numeric characters (Decimals are okay.)")
+            print("Entry is not a valid integer or decimal.")
 
 def get_input(message):
     """check string for non alphanumeric characters, leaving in these"/,.-:'" for phone, date, and descriptions.
@@ -48,7 +49,6 @@ def get_input(message):
                 ok=""
         if len(ok)==len(s):
             return ok
-
 
 def get_type_input(types):
     message=""
@@ -90,26 +90,56 @@ def get_search_menu_input():
                      "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\nEnter your selection: ")
         if choice in ('12345678'):
             return choice
+
 def get_date_input():
+    # could maybe revise to check for dashes and colons and spaces by inex. probably faster and easier.
     d=input("Please enter the date and time using YYYY-MM-DD HH:MM format: ")
     da=d.split(' ')
     count=0
+
+    dash=0
     count2=0
+    colon=0
     while True:
         if (len(da[0])==10) & (len(da[1])==5):
-            for char in da[0]:
-                if char in '0123456789-':
+            for char in da[0]: #date portion
+                if char in '0123456789':
                     count=count+1
+                elif char =='-':
+                    dash=dash+1
             for char in da[1]:
-                if char in '0123456789:':
+                if char in '0123456789':
                     count2=count2+1
-            if (count==len(da[0])) & (count2==len(da[1])):
+                elif char == ':':
+                    colon=colon+1
+            if ((count+dash)==len(da[0])) & ((count2+colon)==len(da[1])) & (count==8) & (dash==2) & (((count2==4)&(colon==1))|(count2==6)&(colon==2)): #count2 could be HH:MM, or HH:MM:SS
                 d=d+":00"
                 return d
             else:
                 print('Please copy the format exactly')
         else:
             print('Please copy the format exactly')
+
+def get_state_input(message):
+    while True:
+        a=get_input(message)
+        if len(a)==2:
+            return a
+
+def get_zip_input(message): #only accepts 5 digit zip codes
+    while True:
+        a=get_numeric_input(message,'i')
+        if len(str(a))==5:
+            return a
+
+def get_phone_input(message):
+    while True:
+        a=get_input(message)
+        s=a.split('-')
+        if (len(str(a))==12) & (len(s)==3):
+            return a
+
+
 
 def merchandise_header():
     show_message("Item ID: \tType: \t\tDescription: \t\t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
