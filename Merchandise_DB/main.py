@@ -1,5 +1,6 @@
-import ui
-import merchandising_DB
+from Merchandise_DB import merchandising_DB, ui
+
+
 #def close_database():
 #    db.close()
 
@@ -10,7 +11,7 @@ def use_choice(choice):
         return
 
     elif choice=='2':
-        merchandising_DB.update_entry()
+        merchandising_DB.update_record()
         return
 
     elif choice=='3':
@@ -22,7 +23,7 @@ def use_choice(choice):
         return
 
     elif choice=='5':
-        merchandising_DB.search_menu()
+        merchandising_DB.search()
         return
 
     elif choice=='6':
@@ -40,7 +41,7 @@ def main():
     merchandising_DB.create_event_sales_table()
 
     while choice !='6':
-        choice=ui.display_menu()
+        choice= ui.display_menu()
         use_choice(choice)
 
 main()

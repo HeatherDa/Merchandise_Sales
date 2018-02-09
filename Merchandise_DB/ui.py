@@ -1,4 +1,5 @@
-import DataValidation
+from Merchandise_DB import DataValidation
+
 
 def display_menu():
     '''Show Main Menu'''
@@ -16,6 +17,8 @@ def display_menu():
         return '5'
     elif option =='6':
         return '6'
+    else:
+        raise FormatError('please enter a number from 1-6')
 
 def show_message(message):
     '''Display a given message'''
@@ -25,12 +28,13 @@ def get_numeric_input(message, t):
     '''Get numeric input back in numeric format as either int or float'''
     while True:
         n=input(message)
-        if (DataValidation.is_int(n)) & (t=='i') :
+        if (DataValidation.is_int(n)) & (t== 'i') :
             return int(n)
-        elif (DataValidation.is_Float(n)) & (t=='f'):
+        elif (DataValidation.is_Float(n)) & (t== 'f'):
             return float(n)
         else:
             print("Entry is not a valid integer or decimal.")
+            raise FormatError('This entry is not a valid integer or decimal')
 
 def get_input(message):
     """check string for non alphanumeric characters, leaving in these"/,.-:'" for phone, date, and descriptions.
@@ -47,8 +51,11 @@ def get_input(message):
             else:
                 show_message("This string contains a forbidden character. Try again.")
                 ok=""
+                raise FormatError('This string has forbidden characters')
         if len(ok)==len(s):
             return ok
+        else:
+            raise FormatError('This string has forbidden characters')
 
 def get_type_input(types):
     message=""
@@ -72,6 +79,8 @@ def get_type_input(types):
 
             elif int(choice)<count:
                 return types[int(choice)-1]
+            else:
+                raise FormatError('use only numbers from 1 to ', len(types))
 
 def get_table_input():
     while True:
@@ -82,6 +91,8 @@ def get_table_input():
             return "events"
         elif name=='3':
             return "event_sales"
+        else:
+            raise FormatError('input should be a number from 1-3')
 
 def get_search_menu_input():
     while True:
@@ -90,18 +101,21 @@ def get_search_menu_input():
                      "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\nEnter your selection: ")
         if choice in ('12345678'):
             return choice
+        else:
+            raise FormatError('input should be a number from 1 to 8')
 
 def get_date_input():
     # could maybe revise to check for dashes and colons and spaces by inex. probably faster and easier.
-    d=input("Please enter the date and time using YYYY-MM-DD HH:MM format: ")
-    da=d.split(' ')
-    count=0
 
-    dash=0
-    count2=0
-    colon=0
     while True:
-        if (len(da[0])==10) & (len(da[1])==5):
+        d=input("Please enter the date and time you are looking for using YYYY-MM-DD HH:MM format: ")
+        da=d.split(' ')
+        count=0
+
+        dash=0
+        count2=0
+        colon=0
+        if (len(da[0])==10) & ((len(da[1])==5)|(len(da[1])==8)):
             for char in da[0]: #date portion
                 if char in '0123456789':
                     count=count+1
@@ -113,24 +127,27 @@ def get_date_input():
                 elif char == ':':
                     colon=colon+1
             if ((count+dash)==len(da[0])) & ((count2+colon)==len(da[1])) & (count==8) & (dash==2) & (((count2==4)&(colon==1))|(count2==6)&(colon==2)): #count2 could be HH:MM, or HH:MM:SS
-                d=d+":00"
+                if (count2==4)&(colon==1): #add seconds if not present
+                    d=d+":00"
                 return d
-            else:
-                print('Please copy the format exactly')
-        else:
-            print('Please copy the format exactly')
+        print('Please copy the format exactly')
+        raise FormatError('Please use the given format.')
 
 def get_state_input(message):
     while True:
         a=get_input(message)
         if len(a)==2:
             return a
+        else:
+            raise FormatError('please use state code')
 
 def get_zip_input(message): #only accepts 5 digit zip codes
     while True:
         a=get_numeric_input(message,'i')
         if len(str(a))==5:
             return a
+        else:
+            raise FormatError('please use 5 digit zip code')
 
 def get_phone_input(message):
     while True:
@@ -138,6 +155,8 @@ def get_phone_input(message):
         s=a.split('-')
         if (len(str(a))==12) & (len(s)==3):
             return a
+        else:
+            raise FormatError('please use xxx-xxx-xxxx format')
 
 
 
@@ -152,3 +171,8 @@ def event_sales_header():
 
 def inventory_Header():
     show_message("Item ID: \tItems Sold: \tItems Purchased: \tItems Remaining: ")
+
+
+class FormatError(Exception):
+    """ Custom exception class """
+    pass
