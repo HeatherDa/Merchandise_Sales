@@ -104,11 +104,12 @@ def get_search_menu_input():
         else:
             raise FormatError('input should be a number from 1 to 8')
 
-def get_date_input():
+def get_date_input(message):
     # could maybe revise to check for dashes and colons and spaces by inex. probably faster and easier.
 
     while True:
-        d=input("Please enter the date and time you are looking for using YYYY-MM-DD HH:MM format: ")
+        message=message+' using YYYY-MM-DD HH:MM format: '
+        d=input(message)
         da=d.split(' ')
         count=0
 

@@ -31,16 +31,18 @@ def create_merchandise_table():
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
-def new_item():
+def new_item(item,description,total_ordered,cost_per_item,taxable):
     """Add new item to merchandise table"""
     try:
+        '''
         item_types=get_types('merchandise')
         item= ui.get_type_input(item_types)
         description= ui.get_input("Please describe the item. (Example: 'white, blue logo' for a T-Shirt, or the title "
                                  "for a CD or Poster.): ")
         total_ordered= ui.get_numeric_input("How many items were ordered?", 'i')
         cost_per_item= ui.get_numeric_input("How much does each item cost?", 'f')
-        taxable= ui.get_numeric_input("Enter 1 if this item is subject to sales tax. Otherwise, type 0: ", 'i')
+        taxable= ui.get_numeric_input("Enter 1 if this item is subject to sales tax, 0 if not: ", 'i')
+        '''
         if taxable !=1:
             taxable=0
         sql='INSERT INTO merchandise (merch_Type, merch_Description, merch_Total_Ordered, merch_Cost, merch_Taxable)' \
@@ -233,7 +235,7 @@ def new_event():
     """Add new event to events table"""
     try:
         type= ui.get_type_input(get_types('events'))
-        date = ui.get_date_input()
+        date = ui.get_date_input('Enter the event date')
         street= ui.get_input("Enter the street address of the event: ")
         city= ui.get_input("Enter the name of the city in which the event is located: ")
         state= ui.get_input("Enter the state code of the state in which the event will take place: ")
@@ -284,7 +286,7 @@ def update_event():
 
                     elif choice == '2':
                         ui.show_message("Previous event date and time: " + str(get_from_events(event_ID, 'date')))
-                        updateData = ui.get_date_input()
+                        updateData = ui.get_date_input('Enter the new event date')
                         sql = '''UPDATE events SET event_Date=? WHERE event_ID=?'''
                         c.execute(sql, (updateData, event_ID,))
                         db.commit()
@@ -585,7 +587,14 @@ def display_event_sales():
 def add_record():
     table= ui.get_table_input()
     if table=='merchandise':
-        new_item()
+        item_types = get_types('merchandise')
+        item = ui.get_type_input(item_types)
+        description = ui.get_input("Please describe the item. (Example: 'white, blue logo' for a T-Shirt, or the title "
+                                   "for a CD or Poster.): ")
+        total_ordered = ui.get_numeric_input("How many items were ordered?", 'i')
+        cost_per_item = ui.get_numeric_input("How much does each item cost?", 'f')
+        is_taxable = ui.get_numeric_input("Enter 1 if this item is subject to sales tax, 0 if not: ", 'i')
+        new_item(item,description,total_ordered,cost_per_item,is_taxable)
     elif table=='events':
         new_event()
     elif table=='event_sales':
@@ -751,7 +760,7 @@ def search_by_date(): #TODO get input from user to search by date.  User can sea
     choice= ui.get_numeric_input('1. Search for event by date\n2. Display events table in order by date, from today forward.\n\nEnter selection: ', 'i')
     
     if choice == 1:
-        d= ui.get_date_input()
+        d= ui.get_date_input('Enter the event date you are looking for')
         records=c.execute('SELECT * FROM events WHERE event_Date = ? ORDER BY event_Date ASC',(d,))
         c.row_factory = sqlite3.Row
         ui.events_header()
@@ -1129,3 +1138,130 @@ class MyError(Exception):
     """ Custom exception class """
     pass
 
+
+def up_merch(choice,updateData,merch_ID):
+    try:
+        if choice == 1: #update type
+            sql = '''UPDATE merchandise SET merch_Type=? WHERE merch_ID=?'''
+            c.execute(sql, (updateData, merch_ID,))
+            db.commit()
+            return
+        elif choice == 2: #update description
+            sql = '''UPDATE merchandise SET merch_Description=? WHERE merch_ID=?'''
+            c.execute(sql, (updateData, merch_ID,))
+            db.commit()
+            return
+        elif choice == 3: #update total
+            sql = '''UPDATE merchandise SET merch_Total_Ordered=? WHERE merch_ID=?'''
+            c.execute(sql, (updateData, merch_ID))
+            db.commit()
+            return
+        elif choice == 4: #update cost
+            sql = '''UPDATE merchandise SET merch_Cost=? WHERE merch_ID=?'''
+            c.execute(sql, (updateData, merch_ID))
+            db.commit()
+            return
+
+    except sqlite3.Error:
+        ui.show_message('An error occured while trying to update merchandise table.  Changes will '
+                        'be rolled back.')
+        traceback.print_exc()
+        db.rollback()
+
+
+def receive_Order(order_ID, merch_ID, date, total, cost, note, vendorID):  #choice is 1: reorder of existing item 2: order of new item
+    while True:
+        sql='INSERT INTO orders (order_ID, merch_ID, vendor_ID, order_Total, order_Cost, order_Note, order_Remaining) VALUES(?,?,?,?,?,?,?,?)'
+        c.execute(sql, (order_ID, merch_ID, vendorID, total, cost, note, total))
+        db.commit()
+        update_Orders(order_ID, date)
+        # This is not how I would handle this in a real inventory system.
+        # I'd have a vendor's table, orders table, and order line item table
+        # to track changes in item costs.
+        ch = ui.get_numeric_input('\n1. Update cost \n2. Quit without update. \n\n'
+                                  'Enter Selection: ', 'i')
+
+        if ch == 1:
+            v = ui.get_numeric_input('Enter the new value: ', 'f')
+            if DataValidation.is_Float(ch):
+                updateData = float(v)
+                ui.show_message('update data is ' + str(updateData))
+            sql = '''UPDATE merchandise SET merch_Cost=? WHERE merch_ID=?'''
+            c.execute(sql, ('receieved',updateData, merch_ID))
+            db.commit()
+            ui.show_message("Updated Cost: " + str(get_from_merch(merch_ID, 'cost')))
+            break
+        elif ch == 2:
+            ui.show_message('okay, no update.')
+            break
+        else:
+            ui.show_message('Please enter a 1 or a 2.')
+    return
+
+def receive_order_ui():
+    #choice, merch_ID, date, total, cost, note, vendorID
+    choice=
+    merch_ID=
+    date=
+    total=
+    cost=
+    note=
+    vendor_ID=
+
+
+def new_Order_ui():
+    vendorID=ui.get_numeric_input('What is the vendor id associated with this order?','i')
+    ordered_date=ui.get_date_input('What date was the order placed on?')
+    new_Order(vendorID, ordered_date)
+
+def new_Order(vendor, ordered):
+    sql='INSERT INTO orders (vendorID, order_date, delivery_date) VALUES (?,?)'
+    c.execute(sql,(vendor, ordered,))
+
+def create_orders_table():
+    try:
+        c.execute(
+            'create table if not exists orders (order_ID integer primary key, vendor_ID integer, order_Date DATETIME, '
+            'order_Received DATETIME DEFAULT NULL ')
+        c.execute('SELECT * FROM orders')
+        rec=c.fetchall()
+        orders=[('1','2018-01-01 10:30','2018-01-10 14:00'),
+                ('2','2018-01-01 11:00','2018-01-15 9:00'),
+                ('3','2018-01-05 13:15','2018-01-15 9:00')]
+        openOrder=('1','2018-02-01 12:30')
+        if len(rec) <1:
+            c.executemany('INSERT INTO orders (vendor_ID, order_Date, order_Received) VALUES (?,?,?)', orders)
+            c.execute('INSERT INTO orders (vendor_ID, order_Date) VALUES (?,?,?)', openOrder)
+            db.commit()
+    except sqlite3.Error:
+        ui.show_message('An error occurred while trying to create orders table')
+        traceback.print_exc()
+
+def update_Orders(choice,order_ID,value):
+    if choice=='received':
+        sql='UPDATE orders SET order_Received=? WHERE order_ID=?'
+        c.execute(sql,(value,order_ID))
+        db.commit()
+    elif choice=='ordered':
+        sql='UPDATE orders SET order_Date=? WHERE order_ID=?'
+        c.execute(sql,(value,order_ID))
+        db.commit()
+
+def create_item_orders_table():
+    try:
+        c.execute('create table if not exists item_orders (order_ID integer, merch_ID integer, ordered_Total integer, '
+                  'ordered_Cost real, CONSTRAINT item_orders PRIMARY KEY (order_ID, merch_ID))')
+        c.execute('SELECT * FROM item_orders')
+        rec=c.fetchall()
+        ordered=[('1','1',50,8.00),
+                 ('1','2',75,8.00),
+                 ('2','3',80,3.00),
+                 ('2','4',70,3.00),
+                 ('3','5',40,5.00),
+                 ('3','6',40,5.00)]
+        if len(rec) <1:
+            c.executemany('INSERT INTO item_orders (order_ID, merch_ID, ordered_Total, ordered_Cost) VALUES (?,?,?,?)', ordered)
+            db.commit()
+    except sqlite3.Error:
+        ui.show_message('An error occurred while trying to create item_orders table')
+        traceback.print_exc()
