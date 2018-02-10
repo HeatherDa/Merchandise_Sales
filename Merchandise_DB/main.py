@@ -32,16 +32,65 @@ def use_choice(choice):
 
 def main():
     choice=None
-    #delete_juggler_table()
-
     #merchandising_DB.delete_table()
 
     merchandising_DB.create_merchandise_table()
     merchandising_DB.create_events_table()
     merchandising_DB.create_event_sales_table()
+    merchandising_DB.create_orders_table()
+    merchandising_DB.create_item_orders_table()
 
     while choice !='6':
         choice= ui.display_menu()
         use_choice(choice)
+
+def view_table():
+    pass
+
+def update_record():
+    pass
+
+def add_record():
+    pass
+
+def delete_record():
+    pass
+
+def search():
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 main()

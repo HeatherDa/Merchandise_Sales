@@ -18,7 +18,7 @@ def display_menu():
     elif option =='6':
         return '6'
     else:
-        raise FormatError('please enter a number from 1-6')
+        show_message('please enter a number from 1-6')
 
 def show_message(message):
     '''Display a given message'''
@@ -34,7 +34,7 @@ def get_numeric_input(message, t):
             return float(n)
         else:
             print("Entry is not a valid integer or decimal.")
-            raise FormatError('This entry is not a valid integer or decimal')
+
 
 def get_input(message):
     """check string for non alphanumeric characters, leaving in these"/,.-:'" for phone, date, and descriptions.
@@ -51,11 +51,10 @@ def get_input(message):
             else:
                 show_message("This string contains a forbidden character. Try again.")
                 ok=""
-                raise FormatError('This string has forbidden characters')
         if len(ok)==len(s):
             return ok
         else:
-            raise FormatError('This string has forbidden characters')
+            show_message('This string has forbidden characters')
 
 def get_type_input(types):
     message=""
@@ -80,19 +79,23 @@ def get_type_input(types):
             elif int(choice)<count:
                 return types[int(choice)-1]
             else:
-                raise FormatError('use only numbers from 1 to ', len(types))
+                show_message('use only numbers from 1 to '+ str(len(types)))
 
 def get_table_input():
     while True:
-        name = input("\n1. merchandise table\n2. events table\n3. event sales table\n\nEnter your selection: ")
+        name = input("\n1. items table\n2. events table\n3. event sales table\n4. orders table\n5. order items table\n\nEnter your selection: ")
         if name=='1':
-            return "merchandise"
+            return "items"
         elif name=='2':
             return "events"
         elif name=='3':
             return "event_sales"
+        elif name=='4':
+            return 'orders'
+        elif name=='5':
+            return 'order_items'
         else:
-            raise FormatError('input should be a number from 1-3')
+            show_message('input should be a number from 1-3')
 
 def get_search_menu_input():
     while True:
@@ -102,7 +105,7 @@ def get_search_menu_input():
         if choice in ('12345678'):
             return choice
         else:
-            raise FormatError('input should be a number from 1 to 8')
+            show_message('input should be a number from 1 to 8')
 
 def get_date_input(message):
     # could maybe revise to check for dashes and colons and spaces by inex. probably faster and easier.
@@ -132,7 +135,7 @@ def get_date_input(message):
                     d=d+":00"
                 return d
         print('Please copy the format exactly')
-        raise FormatError('Please use the given format.')
+        show_message('Please use the given format.')
 
 def get_state_input(message):
     while True:
@@ -140,7 +143,7 @@ def get_state_input(message):
         if len(a)==2:
             return a
         else:
-            raise FormatError('please use state code')
+            show_message('please use state code')
 
 def get_zip_input(message): #only accepts 5 digit zip codes
     while True:
@@ -148,7 +151,7 @@ def get_zip_input(message): #only accepts 5 digit zip codes
         if len(str(a))==5:
             return a
         else:
-            raise FormatError('please use 5 digit zip code')
+            show_message('please use 5 digit zip code')
 
 def get_phone_input(message):
     while True:
@@ -157,11 +160,11 @@ def get_phone_input(message):
         if (len(str(a))==12) & (len(s)==3):
             return a
         else:
-            raise FormatError('please use xxx-xxx-xxxx format')
+            show_message('please use xxx-xxx-xxxx format')
 
 
 
-def merchandise_header():
+def items_header():
     show_message("Item ID: \tType: \t\tDescription: \t\t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
 
 def events_header():
@@ -174,6 +177,3 @@ def inventory_Header():
     show_message("Item ID: \tItems Sold: \tItems Purchased: \tItems Remaining: ")
 
 
-class FormatError(Exception):
-    """ Custom exception class """
-    pass
