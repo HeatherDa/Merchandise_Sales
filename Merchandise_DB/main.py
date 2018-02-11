@@ -1,4 +1,4 @@
-from Merchandise_DB import merchandising_DB, ui
+from Merchandise_DB import database, ui
 
 
 #def close_database():
@@ -6,41 +6,49 @@ from Merchandise_DB import merchandising_DB, ui
 
 
 def use_choice(choice):
-    if choice=='1':
-        merchandising_DB.view_table()
+    if choice==1:
+        database.view_table_ui()
         return
 
-    elif choice=='2':
-        merchandising_DB.update_record()
+    elif choice==2:
+        database.update_record()
         return
 
-    elif choice=='3':
-        merchandising_DB.add_record()
+    elif choice==3:
+        database.add_record()
         return
 
-    elif choice=='4':
-        merchandising_DB.delete_Record()
+    elif choice==4:
+        database.delete_Record()
         return
 
-    elif choice=='5':
-        merchandising_DB.search()
+    elif choice==5:
+        database.search()
         return
 
-    elif choice=='6':
-        merchandising_DB.close_database()
+    elif choice==6:
+        database.settings_ui()
+
+    elif choice==7:
+        database.close_database()
         return
+
+
 
 def main():
     choice=None
-    #merchandising_DB.delete_table()
+    #for i in range(5):
+    #    database.delete_table()
+    database.delete_table()
 
-    merchandising_DB.create_merchandise_table()
-    merchandising_DB.create_events_table()
-    merchandising_DB.create_event_sales_table()
-    merchandising_DB.create_orders_table()
-    merchandising_DB.create_item_orders_table()
+    database.create_items_table()
+    database.create_events_table()
+    database.create_event_sales_table()
+    database.create_orders_table()
+    database.create_item_orders_table()
+    database.create_organization_table()
 
-    while choice !='6':
+    while choice !='7':
         choice= ui.display_menu()
         use_choice(choice)
 

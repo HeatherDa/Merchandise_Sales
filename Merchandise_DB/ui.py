@@ -1,24 +1,13 @@
-from Merchandise_DB import DataValidation
-
+#Get user input and validate it
 
 def display_menu():
     '''Show Main Menu'''
-    option=input("\n1. Display table\n2. Update Record\n3. Add New Record\n4. Delete Record\n5. Search\n6. Quit\nEnter selection: ")
+    option=get_numeric_input("\n1. Display table\n2. Update Record\n3. Add New Record\n4. Delete Record\n5. Search\n6. Change Settings\n7. Quit\nEnter selection: ",'i')
     print("")
-    if option=='1':
-        return '1'
-    elif option =='2':
-        return '2'
-    elif option =='3':
-        return '3'
-    elif option =='4':
-        return '4'
-    elif option == '5':
-        return '5'
-    elif option =='6':
-        return '6'
+    if (option >0) & (option <8):
+        return option
     else:
-        show_message('please enter a number from 1-6')
+        show_message('please enter a number from 1-7')
 
 def show_message(message):
     '''Display a given message'''
@@ -28,9 +17,9 @@ def get_numeric_input(message, t):
     '''Get numeric input back in numeric format as either int or float'''
     while True:
         n=input(message)
-        if (DataValidation.is_int(n)) & (t== 'i') :
+        if (is_int(n)) & (t== 'i') :
             return int(n)
-        elif (DataValidation.is_Float(n)) & (t== 'f'):
+        elif (is_Float(n)) & (t== 'f'):
             return float(n)
         else:
             print("Entry is not a valid integer or decimal.")
@@ -67,7 +56,7 @@ def get_type_input(types):
     while True: #Accept only valid input
         print(message)
         choice = input("Enter your selection: ")
-        if (DataValidation.is_int(choice)):
+        if (is_int(choice)):
             if  choice=='0': #if user wants to add a new type
                 if 'CD' in types: #Basically checking for which type list to add it to.
                     t=get_input("Enter the new item Type: ")
@@ -95,7 +84,7 @@ def get_table_input():
         elif name=='5':
             return 'order_items'
         else:
-            show_message('input should be a number from 1-3')
+            show_message('input should be a number from 1-5')
 
 def get_search_menu_input():
     while True:
@@ -176,4 +165,16 @@ def event_sales_header():
 def inventory_Header():
     show_message("Item ID: \tItems Sold: \tItems Purchased: \tItems Remaining: ")
 
+def is_Float(n):
+    try:
+        if float(n):
+            return True
+    except ValueError:
+        return False
 
+def is_int(n):
+    try:
+        int(n)
+        return True
+    except ValueError:
+        return False
