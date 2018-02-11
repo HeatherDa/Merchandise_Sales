@@ -88,10 +88,10 @@ def get_table_input():
 
 def get_search_menu_input():
     while True:
-        choice=input("1. Get Record by ID \n2. Get Record by Type \n3. Get Events sorted by Date \n"
+        choice=get_numeric_input("1. Get Record by ID \n2. Get Record by Type \n3. Get Events sorted by Date \n"
                      "4. Get items by quantity in inventory \n5. Get Total Sales Tax Owed for a given year \n"
-                     "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\nEnter your selection: ")
-        if choice in ('12345678'):
+                     "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\nEnter your selection: ",'i')
+        if (choice > 0) & (choice <9):
             return choice
         else:
             show_message('input should be a number from 1 to 8')
@@ -176,6 +176,12 @@ def order_items_header():
     show_message("\033[1m" + "Item Orders Table" + "\033[0m")
     show_message("\033[1m"+"\033[4m"+"Order ID: \tItem ID: \tTotal Ordered: \tCost: \t\t\tOrder Memo: \t\t\t\t\t\tRemaining inventory: "+"\033[0m")
 
+def profits_header():
+    show_message("\033[1m" + "Profits Query Results" + "\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Item ID: \tItem Type: \tItem Description \t\t\t\tProfit: "+"\033[0m")
+
+#\nItem ID \tItem Type \tItem Description \t\t\t\tProfit
+
 def is_Float(n):
     try:
         if float(n):
@@ -189,3 +195,136 @@ def is_int(n):
         return True
     except ValueError:
         return False
+
+def add_spaces(st, col):
+    d=0
+    if (col=='ordered_Memo'):
+        length = len(st)
+        d = 35 - length
+        st = st + (d * " ") + "\t" #if I take this and the following line out, it tells me the d variable is not used. WHY?
+        return st
+    if (col =='item_Description') | (col=='iTotal'):
+        length=len(st)
+        d=30-length
+    elif (col=='address') :
+        length=len(st)
+        d=40-length
+    elif (col=='event_Contact') :
+        length=len(st)
+        d=25-length
+    elif (col=='sales_Total') | (col=='sold') | (col=='ordered_Total'):
+        length=len(st)
+        d=14-length
+    elif (col=='sales_Price') | (col=='sales_Tax'):
+        length = len(str(st))
+        d = 13 - length
+        fl=float(st)
+        s="%.2f" %fl
+        st = s + (d * " ") + " \t"
+        return st
+    elif (col=='ordered_Cost') | (col=='profit'):
+        length = len(str(st))
+        d = 10 - length
+        fl = float(st)
+        s = "%.2f" % fl
+        st = s + (d * " ") + " \t"
+        return st
+    elif (col=='item_Total_Ordered'):
+        length = len(st)
+        d = 10 - length
+    elif (col=='iOrdered'):
+        length = len(st)
+        d = 16 - length
+    elif (col=='event_Date')|(col=='ordered_Date'):
+        length=len(st)
+        d = 20 - length
+    else:
+        length=len(st)
+        d=10-length
+    st = st + (d * " ") + "\t"
+    return st
+
+def item_record_format(record):
+    '''get record, display row'''
+
+    k=record.keys()
+    a=""
+    for col in k:
+        if col!='item_Taxable':
+            a=a+add_spaces(str(record[col]), str(col))
+        elif col=='item_Taxable':
+            if (str(record[col]))=='0':
+                a=a+"Tax Exempt"
+            elif (str(record[col]))=='1':
+                a=a+"Taxable"
+    show_message(a)
+
+def profit_result_format(record, profit):
+    k=record.keys()
+    a=""
+    for col in k:
+        if col != 'item_Taxable':
+            a=a+add_spaces(str(record[col]), str(col))
+    show_message(a+add_spaces(str(profit), 'profit'))
+
+
+def event_record_format(record):
+    '''get record, display row'''
+
+    address = str(record['event_Street'] + ", " + record['event_City'] + ", " + record['event_State'] + ", " +
+                  record['event_Zip'])
+    k = record.keys()
+    a = ""
+    for col in k:
+        if (col != "event_Street") & (col != "event_City") & (col != "event_State") & (col != "event_Zip"):
+            a = a + add_spaces(str(record[col]), str(col))
+        elif col == "event_Street":
+            a = a + add_spaces(address, 'address')
+    show_message(a)
+
+def event_sales_record_format(record, tax):
+    '''get record and salestax, display row'''
+    k=record.keys()
+    #print (k)
+    a=""
+    #if len(tax)>0:
+    #    t=float(tax[0])
+
+    if len(k)>4:
+        k=["event_ID", 'item_ID', 'sales_Total', 'sales_Price']
+
+    for col in k:
+        a=a+add_spaces(str(record[col]), str(col))
+    show_message(a + add_spaces(tax, 'sales_Tax'))
+
+    def order_items_record_format(record):  # TODO write this
+        k = record.keys()
+        a = ""
+        for n in k:
+            a = a + add_spaces(str(record[n]), str(n))
+        show_message(a)
+
+def order_record_format(record):
+    '''get record, display row'''
+    k = record.keys()
+    # print (k)
+    a = ""
+    # if len(tax)>0:
+    #    t=float(tax[0])
+    if len(k) > 3:
+        k = ["order_ID", 'vendor_ID', 'order_Date']
+    for c in k:
+        a = a + add_spaces(str(record[c]), str(c))
+    if len(str(record[3]))>5:
+        a = a + add_spaces(record[3],'order_Received') #if we have received it, display the date
+    else:
+        a = a + " " #if we haven't displayed it, show a blank instead of None
+    show_message(a)
+
+def inventory_record_format(k):
+    '''get list of column values, display row'''
+    a=""
+    column=['item_ID','sold','iOrdered','iTotal']
+    for col in k:
+        a=a+add_spaces(str(col), str(column[k.index(col)]))
+    show_message(a)

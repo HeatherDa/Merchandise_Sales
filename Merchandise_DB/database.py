@@ -93,16 +93,6 @@ def update_items(choice,updateData,item_ID):
             c.execute(sql, (updateData, item_ID,))
             db.commit()
             return
-        elif choice == 3: #update total
-            sql = '''UPDATE items SET item_Total_Ordered=? WHERE item_ID=?'''
-            c.execute(sql, (updateData, item_ID))
-            db.commit()
-            return
-        elif choice == 4: #update cost
-            sql = '''UPDATE items SET item_Cost=? WHERE item_ID=?'''
-            c.execute(sql, (updateData, item_ID))
-            db.commit()
-            return
 
     except sqlite3.Error:
         ui.show_message('An error occured while trying to update items table.  Changes will '
@@ -136,25 +126,6 @@ def get_from_items(item_ID, value):
     except sqlite3.Error:
         ui.show_message("An error ocurred while searching for " + value + ".")
         traceback.print_exc()
-
-def item_record_format(record):
-    '''Format record for display'''
-
-    k=record.keys()
-    a=""
-    for c in k:
-        if c!='item_Taxable':
-            a=a+add_spaces(str(record[c]), str(c))
-        elif c=='item_Taxable':
-            if (str(record[c]))=='0':
-                a=a+"Tax Exempt"
-            elif (str(record[c]))=='1':
-                a=a+"Taxable"
-    ui.show_message(a)
-
-
-
-
 
 def create_events_table():
     """ Create events table"""
@@ -282,19 +253,7 @@ def get_from_events(event_ID, value):
         ui.show_message("An error ocurred while searching for " + value + ".")
         traceback.print_exc()
 
-def event_record_format(record):
-    '''Format record for display'''
 
-    address = str(record['event_Street']+ ", " + record['event_City'] +", " + record['event_State'] + ", "+
-                  record['event_Zip'])
-    k=record.keys()
-    a=""
-    for n in k:
-        if (n != "event_Street") & (n!="event_City")&(n!="event_State")&(n!="event_Zip"):
-            a=a+add_spaces(str(record[n]), str(n))
-        elif n == "event_Street":
-            a=a+add_spaces(address, 'address')
-    ui.show_message (a)
 
 
 
@@ -387,20 +346,6 @@ def get_from_event_sales(e_ID, i_ID, value):
         ui.show_message("An error occurred while searching for " + value + ".")
         traceback.print_exc()
 
-def event_sales_record_format(record, tax):
-    '''Format record for display'''
-    k=record.keys()
-    #print (k)
-    a=""
-    #if len(tax)>0:
-    #    t=float(tax[0])
-
-    if len(k)>4:
-        k=["event_ID", 'item_ID', 'sales_Total', 'sales_Price']
-
-    for c in k:
-        a=a+add_spaces(str(record[c]), str(c))
-    ui.show_message(a + add_spaces(tax, 'sales_Tax'))
 
 
 
@@ -417,9 +362,9 @@ def display_event_sales():
     for record in records:
         if taxable(record['event_ID'],record['item_ID']):
             tax = salesTax(record['sales_Price'], record['sales_Total'])  # sales tax for this item
-            event_sales_record_format(record, tax)
+            ui.event_sales_record_format(record, tax)
         else:
-            event_sales_record_format(record, 0.00)
+            ui.event_sales_record_format(record, 0.00)
     return
 
 
@@ -551,14 +496,6 @@ def receive_Order(items):
         # return
 
 
-def order_items_record_format(record): #TODO write this
-    k = record.keys()
-    a = ""
-    for n in k:
-            a = a + add_spaces(str(record[n]), str(n))
-    ui.show_message(a)
-
-
 def create_orders_table():
     try:
         sql='CREATE TABLE IF NOT EXISTS orders (order_ID integer primary key, vendor_ID integer not Null, ' \
@@ -594,51 +531,41 @@ def update_order(choice,order_ID,value):
         c.execute(sql,(value,order_ID))
         db.commit()
 
-def get_from_orders(order_ID, value):
-    #TODO write this
+def get_from_orders(order_ID, value):  #TODO: write it
     pass
 
-def order_record_format(record):
-    '''Format record for display'''
-    k = record.keys()
-    # print (k)
-    a = ""
-    # if len(tax)>0:
-    #    t=float(tax[0])
-    if len(k) > 3:
-        k = ["order_ID", 'vendor_ID', 'order_Date']
-    for c in k:
-        a = a + add_spaces(str(record[c]), str(c))
-    if len(str(record[3]))>5:
-        a = a + add_spaces(record[3],'order_Received') #if we have received it, display the date
-    else:
-        a = a + " " #if we haven't displayed it, show a blank instead of None
-    ui.show_message(a)
+def create_organization_table():
+    #The point of this is to store state and sales tax information in the database so it can be updated if necessary
+    try:
+        c.execute('create table if not exists organizations (org_ID integer primary key, state, salesTaxPercent)')
+        c.execute('SELECT * FROM organizations')
+        rec=c.fetchall()
+        org=[('MN',7.375)]
+        if len(rec) <1:
+            c.executemany('INSERT INTO organizations (state, salesTaxPercent) VALUES (?,?)', org)
+            db.commit()
+    except sqlite3.Error:
+        ui.show_message('An error occurred while trying to create organizations table')
+        traceback.print_exc()
+
+def change_settings(sta, tax): #Assumes this table only has one record
+    try:
+        sql='UPDATE organizations SET state = ? AND salesTaxPercent = ?'
+        c.execute(sql, (sta, tax))
+    except sqlite3.Error:
+        ui.show_message('An error occurred while trying to update organizations table')
 
 
-# k = record.keys()
-#     #print (k, ' is keys')
-#     a=""
-#     for c in k:
-#         # if c == 'order_Received':
-#         #     r=record['order_Received']
-#         #     print('value ',r,' type ',type(r))
-#         #     if len(r)<=0:
-#         #         a=' '
-#         if c== 'order_Received':
-#             a='. . . . .'
-#         else:
-#             a=str(record[c])
-#         a=a+add_spaces(str(record[c]), str(c))
-#     ui.show_message(a)
+
+def drop_settings():
+    c.execute('DROP TABLE IF EXISTS organization') #Delete table
+    db.commit()
 
 
 
 
 
-
-
-
+#TODO: fix me!
 def delete_Record():
     """Delete a record from the database by ID"""
     try:
@@ -688,24 +615,7 @@ def delete_Record():
         traceback.print_exc()
         db.rollback()
 
-def search():
-    choice = ui.get_search_menu_input()
-    if choice == '0':
-        return
-    elif choice == '1':
-        search_by_id_ui()
-    elif choice == '2':
-        search_by_type()
-    elif choice == '3':
-        search_by_date() #use original choice 3 code to display results, use ui to get date input from user
-    elif choice == '4':
-        search_by_on_hand()
-    elif choice == '5':
-        search_by_salesTax_due()
-    elif choice == '6':
-        search_by_profit()
-    elif choice == '7':
-        search_by_event()
+
 
 
 
@@ -723,14 +633,14 @@ def search_by_id_ui():
 
         ui.items_header()
         for record in records:
-            item_record_format(record)
+            ui.item_record_format(record)
     elif table == 'events':
         e_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
         records = get_from_events(e_id,'all')
         c.row_factory = sqlite3.Row
         ui.events_header()
         for record in records:
-            event_record_format(record)
+            ui.event_record_format(record)
     elif table == 'event_sales':
         e_id = ui.get_numeric_input("Enter the event id you wish to search by: ", 'i')
         i_id = ui.get_numeric_input("Enter the items id you wish to search by: ", 'i')
@@ -741,9 +651,9 @@ def search_by_id_ui():
         for record in records:
             if taxable(e_id,i_id):
                 tax = salesTax(record['sales_Price'], record['sales_Total'])
-                event_sales_record_format(record, tax)
+                ui.event_sales_record_format(record, tax)
             else:
-                event_sales_record_format(record, 0.00)
+                ui.event_sales_record_format(record, 0.00)
 
 def search_by_type():
     table = ui.get_numeric_input('1. items table\n2.events table\n\nEnter your selection: ', 'i')
@@ -759,7 +669,7 @@ def search_by_type():
         c.row_factory = sqlite3.Row
         ui.items_header()
         for record in records:
-            item_record_format(record)
+            ui.item_record_format(record)
     elif table == 2:
         a = ""
         event_types = get_types('events')
@@ -772,7 +682,7 @@ def search_by_type():
         c.row_factory = sqlite3.Row
         ui.items_header()
         for record in records:
-            event_record_format(record)
+            ui.event_record_format(record)
 
 def search_by_date():
     # Show events ordered by date
@@ -793,14 +703,14 @@ def search_by_date():
         c.row_factory = sqlite3.Row
         ui.events_header()
         for r in records:
-            event_record_format(r)
+            ui.event_record_format(r)
     elif choice == 2:
         d=datetime.today()
         records=c.execute('SELECT * FROM events WHERE event_Date >= ? ORDER BY event_Date ASC',(d,))
         c.row_factory = sqlite3.Row
         ui.events_header()
         for r in records:
-            event_record_format(r)
+            ui.event_record_format(r)
 
 
 
@@ -818,7 +728,7 @@ def search_by_on_hand_ui():
         order= i[2]
         rem = order - sold
         if rem < par:
-            inventory_record_format([i[0], sold, order, rem])
+            ui.inventory_record_format([i[0], sold, order, rem])
 
 def search_by_on_hand():
     sql='SELECT items.item_ID, SUM(ordered_Remaining) ' \
@@ -892,13 +802,54 @@ def search_by_salesTax_due():
         ui.show_message('trouble searching by date')
         traceback.print_exc()
 
-def search_by_profit():
+def search_by_profit_ui():
     ui.show_message("\n1. Profit for a specific item ID\n2. Total Profit per item\n3. Total profit this year\n")
     choice = ui.get_numeric_input("Enter your selection: ", 'i')
+
     if choice == 1:
         item_ID = ui.get_numeric_input("\nWhat item ID do you want to use?", 'i')
+        records=search_by_profit(choice,item_ID)
+        ui.profits_header()
+        #TODO: check how I did this in view table
+        for record in records:
+            profit = (record['sales_Price'] - record['item_Cost']) * record['sales_Total']
+            if taxable(record['event_ID'], record['item_ID']):
+                tax = salesTax(record['sales_Price'], record['sales_Total'])
+                profit = profit - tax
+            ui.profit_result_format(record, profit)
+    elif choice ==2:
+        records = search_by_profit(choice)
+        r = {}
+        ui.profits_header()
 
-        sql = 'SELECT items.item_ID, sales_Price, item_Cost, sales_Total, event_State, item_Taxable ' \
+        for record in records:  # get distinct item_ID's and make them keys in a dictionary
+            if record['item_ID'] not in r:
+                r[record['item_ID']] = 0
+
+        for record in records:  # get running total of profit per item and store as value paired with item_ID key (like a subquery)
+            profit = (record['sales_Price'] - record['item_Cost']) * record['sales_Total']
+            if taxable(record['event_ID'], record['item_ID']):
+                tax = salesTax(record['sales_Price'], record['sales_Total'])
+                profit = profit - tax
+            r[record['item_ID']] += profit
+
+        for key in r.keys():
+            record = get_from_items(key, 'all')
+            ui.profit_result_format(record, r[record['item_ID']])  # one record for each item_ID in results
+    elif choice ==3:
+        records=search_by_profit(choice)
+        total = 0
+        for r in records:
+            total = total + r[1]  # should add sums for each item together
+        ui.show_message('Gross sale profits this year: ' + str(total))
+
+
+def search_by_profit(choice,*item_ID):
+
+    if choice == 1:
+
+        sql = 'SELECT event_sales.event_ID, items.item_ID, sales_Price, item_Cost, sales_Total, event_State, ' \
+              'item_Taxable, item_Type, item_Description ' \
               'FROM items ' \
               'INNER JOIN event_sales ON items.item_ID=event_sales.item_ID ' \
               'INNER JOIN events ON event_sales.event_ID=events.event_ID ' \
@@ -906,37 +857,49 @@ def search_by_profit():
 
         records = c.execute(sql, (item_ID,))
         c.row_factory = sqlite3.Row
+        return(records)
 
-        ui.show_message("Item ID \tProfit")
-        for record in records:
-            if (record['event_State'] != 'MN') | (record['item_Taxable'] == 0):
-                profit = str(((record['sales_Price'] - record['item_Cost']) * record['sales_Total']))
-            else:
-                profit = str(((record['sales_Price'] - record['item_Cost']) * record['sales_Total'])
-                             - salesTax(record['sales_Price'], record['sales_Total']))
-            ui.show_message(str(item_ID) + "\t \t \t" + profit)
+        # ui.profits_header()
+        # ui.profits_header()
+        # for record in records:
+        #     profit = (record['sales_Price'] - record['item_Cost']) * record['sales_Total']
+        #     if taxable(record['event_ID'], record['item_ID']):
+        #         tax = salesTax(record['sales_Price'], record['sales_Total'])
+        #         profit = profit - tax
+        #     ui.profit_result_format(record, profit)
     elif choice == 2:
 
-        sql = 'SELECT items.item_ID, sales_Price, item_Cost, sales_Total, event_State, item_Taxable, ' \
-              'item_Type, item_Description ' \
+        sql = 'SELECT event_sales.event_ID, items.item_ID, sales_Price, item_Cost, sales_Total, event_State, ' \
+              'item_Taxable, item_Type, item_Description ' \
               'FROM items ' \
               'INNER JOIN event_sales ON items.item_ID=event_sales.item_ID ' \
               'INNER JOIN events ON event_sales.event_ID=events.event_ID ' \
               'ORDER BY items.item_ID '
+        # This SQL query does not return a sum of profit per item
+        # Couldn't get that query to work the way I wanted.
+        # So I extracted the information myself.
 
         records = c.execute(sql)
         c.row_factory = sqlite3.Row
+        return records
+        # r={}
+        # ui.profits_header()
+        #
+        # for record in records:  #get distinct item_ID's and make them keys in a dictionary
+        #     if record['item_ID'] not in r:
+        #         r[record['item_ID']]=0
+        #
+        # for record in records: #get running total of profit per item and store as value paired with item_ID key (like a subquery)
+        #     profit = (record['sales_Price'] - record['item_Cost']) * record['sales_Total']
+        #     if taxable(record['event_ID'],record['item_ID']):
+        #         tax=salesTax(record['sales_Price'], record['sales_Total'])
+        #         profit=profit-tax
+        #     r[record['item_ID']]+=profit
+        #
+        # for key in r.keys():
+        #     record=get_from_items(key,'all')
+        #     ui.profit_result_format(record, r[record['item_ID']]) #one record for each item_ID in results
 
-        ui.show_message("\nItem ID \tItem Type \tItem Description \t\t\t\tProfit")
-        for record in records:
-            if (record['event_State'] != 'MN') | (record['item_Taxable'] == 0):
-                profit = str(((record['sales_Price'] - record['item_Cost']) * record['sales_Total']))
-            else:
-                profit = str(((record['sales_Price'] - record['item_Cost']) * record['sales_Total']) - salesTax(
-                    record['sales_Price'], record['sales_Total']))
-            ui.show_message(add_spaces(str(record['item_ID']), 'item_ID') +
-                            add_spaces(str(record['item_Type']), 'item_Type') +
-                            add_spaces(str(record['item_Description']), 'item_Description') + profit)
     elif choice == 3:
         current_year = datetime.today().strftime("%Y")
         data_since = (str(current_year) + "-01-01 01:01")
@@ -988,42 +951,7 @@ def taxable(e_id,m_id):
 
 
 
-def view_table_ui():
-    '''View a given table'''
-    ui.show_message(' ')
-    name=ui.get_table_input()
-    if name=='items':
-        records=view_table(name)
-        ui.items_header()
-        for record in records:
-            item_record_format(record)
-        #for i in range(len(records)):
-        #    record=records.pop(i)
-        #    item_record_format(record)
 
-    elif name=='events':
-        records=view_table(name)
-        ui.events_header()
-        for record in records:
-            event_record_format(record)
-    elif name=='event_sales':
-        records = view_table(name)
-        ui.event_sales_header()
-        for record in records:
-            tax=0.00
-            if taxable(record['event_ID'],record['item_ID']):
-                tax=salesTax(record['sales_Price'],record['sales_Total'])
-            event_sales_record_format(record,tax)
-    elif name=='orders':
-        records = view_table(name)
-        ui.orders_header()
-        for record in records:
-            order_record_format(record)
-    elif name=='order_items':
-        records = view_table(name)
-        ui.order_items_header()
-        for record in records:
-            order_items_record_format(record)
 
 
 def view_table(name):
@@ -1133,18 +1061,18 @@ def salesTax(price, total):
 def get_types(table):
     try:
         if table=='items':
-            c.execute('SELECT DISTINCT item_Type FROM items')
-            a=c.fetchall()
-            types=[]
-            for ty in a:
-                types.append(ty)
+            records=c.execute('SELECT DISTINCT item_Type FROM items')
+            c.row_factory=sqlite3.Row
+            types = []
+            for record in records:
+                types.append(record['item_Type'])
             return types
         elif table=='events':
-            c.execute('SELECT DISTINCT event_Type FROM events')
-            a = c.fetchall()
+            records=c.execute('SELECT DISTINCT event_Type FROM events')
+            c.row_factory = sqlite3.Row
             types = []
-            for ty in a:
-                types.append(ty)
+            for record in records:
+                types.append(record['item_Type'])
             return types
     except sqlite3.Error:
         ui.show_message('An error occured while trying to get types')
@@ -1202,65 +1130,13 @@ def get_types(table):
 def close_database():
     db.close()
 
-def add_spaces(st, col):
-    d=0
-    if (col=='ordered_Memo'):
-        length = len(st)
-        d = 35 - length
-        st = st + (d * " ") + "\t" #if I take this and the following line out, it tells me the d variable is not used. WHY?
-        return st
-    if (col =='item_Description') | (col=='iTotal'):
-        length=len(st)
-        d=30-length
-    elif (col=='address') :
-        length=len(st)
-        d=40-length
-    elif (col=='event_Contact') :
-        length=len(st)
-        d=25-length
-    elif (col=='sales_Total') | (col=='sold') | (col=='ordered_Total'):
-        length=len(st)
-        d=14-length
-    elif (col=='sales_Price') | (col=='sales_Tax'):
-        length = len(str(st))
-        d = 13 - length
-        fl=float(st)
-        s="%.2f" %fl
-        st = s + (d * " ") + " \t"
-        return st
-    elif (col=='ordered_Cost'):
-        length = len(str(st))
-        d = 10 - length
-        fl = float(st)
-        s = "%.2f" % fl
-        st = s + (d * " ") + " \t"
-        return st
-    elif (col=='item_Total_Ordered'):
-        length = len(st)
-        d = 10 - length
-    elif (col=='iOrdered'):
-        length = len(st)
-        d = 16 - length
-    elif (col=='event_Date')|(col=='ordered_Date'):
-        length=len(st)
-        d = 20 - length
-    else:
-        length=len(st)
-        d=10-length
-    st = st + (d * " ") + "\t"
-    return st
 
 
 
 
 
-def inventory_record_format(k):
-    '''Format record for display'''
-    a=""
-    col=['item_ID','sold','iOrdered','iTotal']
-    for c in k:
-        a=a+add_spaces(str(c), str(col[k.index(c)]))
-    ui.show_message(a)
+
+
 
 class MyError(Exception):
     """ Custom exception class """
@@ -1304,39 +1180,5 @@ class MyError(Exception):
 
 
 
-def create_organization_table():
-    #The point of this is to store state and sales tax information in the database so it can be updated if necessary
-    try:
-        c.execute('create table if not exists organizations (org_ID integer primary key, state, salesTaxPercent)')
-        c.execute('SELECT * FROM organizations')
-        rec=c.fetchall()
-        org=[('MN',7.375)]
-        if len(rec) <1:
-            c.executemany('INSERT INTO organizations (state, salesTaxPercent) VALUES (?,?)', org)
-            db.commit()
-    except sqlite3.Error:
-        ui.show_message('An error occurred while trying to create organizations table')
-        traceback.print_exc()
 
-def change_settings(sta, tax): #Assumes this table only has one record
-    try:
-        sql='UPDATE organizations SET state = ? AND salesTaxPercent = ?'
-        c.execute(sql, (sta, tax))
-    except sqlite3.Error:
-        ui.show_message('An error occurred while trying to update organizations table')
 
-def settings_ui():
-    choice=ui.get_numeric_input('1. Change state and saleTax percentage\n2. Exit\n\nEnter your selection: ','i')
-    if choice==0:
-        return
-    elif choice==1:
-        sta=ui.get_state_input("Enter the new state code: ")
-        per=ui.get_numeric_input('Enter the new sales tax percent as a decimal: ','f')
-        change_settings(sta,per)
-
-def drop_settings():
-    c.execute('DROP TABLE IF EXISTS organization') #Delete table
-    db.commit()
-
-def delete_db():
-    c.execute('drop ')

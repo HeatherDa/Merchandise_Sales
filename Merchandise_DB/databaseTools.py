@@ -1,19 +1,41 @@
 from Merchandise_DB import ui
 from Merchandise_DB import database
 
+def view_table_ui():
+    '''View a given table'''
+    ui.show_message(' ')
+    name=ui.get_table_input()
+    if name=='items':
+        records=database.view_table(name)
+        ui.items_header()
+        for record in records:
+            database.item_record_format(record)
 
-def update_record():
-    table= ui.get_table_input()
-    if table == 'items':
-        update_items_ui()
-    elif table == 'events':
-        update_event_ui()
-    elif table == 'event_sales':
-        update_event_sales_ui()
-    elif table == 'orders':
-        update_order_ui()
-    elif table == 'order_items':
-        update_order_item_ui()
+    elif name=='events':
+        records=database.view_table(name)
+        ui.events_header()
+        for record in records:
+            database.event_record_format(record)
+    elif name=='event_sales':
+        records = database.view_table(name)
+        ui.event_sales_header()
+        for record in records:
+            tax=0.00
+            if database.taxable(record['event_ID'],record['item_ID']):
+                tax=database.salesTax(record['sales_Price'],record['sales_Total'])
+            database.event_sales_record_format(record,tax)
+    elif name=='orders':
+        records = database.view_table(name)
+        ui.orders_header()
+        for record in records:
+            database.order_record_format(record)
+    elif name=='order_items':
+        records = database.view_table(name)
+        ui.order_items_header()
+        for record in records:
+            database.order_items_record_format(record)
+
+
 
 def update_items_ui():
     while True:
@@ -271,3 +293,12 @@ def add_record(*table):
                             break
                         else:
                             ui.show_message('got past actual code in add records order_items') #TODO: would you ever get here?
+
+def settings_ui():
+    choice=ui.get_numeric_input('1. Change state and saleTax percentage\n2. Exit\n\nEnter your selection: ','i')
+    if choice==0:
+        return
+    elif choice==1:
+        sta=ui.get_state_input("Enter the new state code: ")
+        per=ui.get_numeric_input('Enter the new sales tax percent as a decimal: ','f')
+        database.change_settings(sta,per)
