@@ -19,7 +19,7 @@ def set_globals():
     c.execute('SELECT * FROM organizations')
     r=c.fetchone()
     state=r[1]
-    percent=r[2]
+    percent=float(r[2])
 
 def create_items_table():
     #Create items table
@@ -46,7 +46,7 @@ def create_items_table():
 
 def new_item(orderID,type,description,total_ordered,cost_per_item,taxable,orderNote):
     """Add new item to items table"""
-    # if there's a new item, there's a new item_orders record too
+    # if there's a new item, there's a new order_items record too
     try:
         '''
         
@@ -64,7 +64,7 @@ def new_item(orderID,type,description,total_ordered,cost_per_item,taxable,orderN
         sql='INSERT INTO items (item_Type, item_Description, item_Taxable)' \
             'VALUES(?,?,?)'
         sql2='SELECT item_ID FROM items WHERE item_Description = ?'
-        sql3='INSERT INTO item_orders (order_ID, item_ID, ordered_Total, ordered_Cost, ordered_Note, ordered,Remaining) VALUES (?,?,?,?,?,?)'
+        sql3='INSERT INTO order_items (order_ID, item_ID, ordered_Total, ordered_Cost, ordered_Note, ordered,Remaining) VALUES (?,?,?,?,?,?)'
         c.execute(sql, (type,description, taxable))
         item_ID=c.execute(sql2, (description))
         c.execute(sql3, (orderID,item_ID,total_ordered, cost_per_item, orderNote, total_ordered))
@@ -80,55 +80,6 @@ def new_item(orderID,type,description,total_ordered,cost_per_item,taxable,orderN
         traceback.print_exc()
         db.rollback()
 
-def update_items_ui():
-    while True:
-        item_ID = ui.get_numeric_input(
-            "What is the ID of the item that you wish to update?  Type 0 to quit without updating.", 'i')
-        if item_ID == 0:
-            return
-        elif is_ID('items', item_ID):
-
-            try:
-                while True:
-                    choice = ui.get_numeric_input("What column do you want to update?\n1. Type\n2. Description\n"
-                                                  "3. Taxable\n\nEnter Choice: ", 'i')
-                    if choice == 1:
-                        ui.show_message("Previous item Type: " + str(get_from_items(item_ID, 'type')))
-                        ui.show_message('Select the new item type:')
-                        updateData = ui.get_type_input(get_types('items'))
-                        update_items(choice,updateData,item_ID)
-                        ui.show_message("Updated item Type: " + str(get_from_items(item_ID, 'type')))
-                        return
-                    elif choice == 2:
-                        ui.show_message("Previous item description: " + str(get_from_items(item_ID, 'description')))
-                        updateData = ui.get_input("Enter the new description: ")
-                        update_items(choice,updateData,item_ID)
-                        ui.show_message("Updated description: " + str(get_from_items(item_ID, 'description')))
-                        return
-                    elif choice == 3:
-                        t=get_from_items(item_ID, 'taxable')
-                        tax_status='False'
-                        if t==1:
-                            tax_status='True'
-                        ui.show_message("Item subject to sales tax: " + tax_status)
-                        updateData = ui.get_numeric_input("1. Item is subject to sales tax\n2. Item is not subject to sales tax\nEnter Selection: ",'i')
-                        update_items(choice, updateData, item_ID)
-
-                        t = get_from_items(item_ID, 'taxable')
-                        tax_status = 'False'
-                        if t == 1:
-                            tax_status = 'True'
-                        ui.show_message("Updated Item subject to sales tax: " + tax_status)
-                        return
-
-            except sqlite3.Error:
-                ui.show_message('An error occured while trying to update items table.  Changes will '
-                                'be rolled back.')
-                traceback.print_exc()
-                db.rollback()
-        else:
-            ui.show_message("Please enter a valid ID.")
-            raise MyError('invalid ID')
 
 def update_items(choice,updateData,item_ID):
     try:
@@ -162,46 +113,24 @@ def update_items(choice,updateData,item_ID):
 def get_from_items(item_ID, value):
     results=c.execute('SELECT * FROM items WHERE item_ID=?', (item_ID,))
     c.row_factory=sqlite3.Row
-    r=""
     try:
-        '''
-        if value=='cost':
+        if value=='all':
             for result in results:
-                r=result['item_Cost']
-            return r
-        elif value=='ordered':
+                return result
+        elif value=='description':
             for result in results:
-                r = result['_Total_Ordered']
-            return r
-        '''
-        if value=='description':
-            for result in results:
-                r = result['item_Description']
-            return r
-
+                return result['item_Description']
         elif value=='type':
             for result in results:
-                r=result['item_Type']
-            return r
+                return result['item_Type']
         elif value=='taxable':
-
             tax=0
             for result in results:
                 tax = result['item_Taxable']
-
             if tax == 1:
-
                 return True
-            elif tax == 0:
-
-                return False
             else:
-                a = ui.get_numeric_input(
-                    "Bad data in Taxable column for this id. Enter 1 if this item should be taxable.",'i')
-                if a == '1':
-                    return True
-                else:
-                    return False
+                return False
         else:
             raise MyError('option passed with no corresponding code')
     except sqlite3.Error:
@@ -210,8 +139,7 @@ def get_from_items(item_ID, value):
 
 def item_record_format(record):
     '''Format record for display'''
-    ui.show_message("Items Table")
-    ui.items_header()
+
     k=record.keys()
     a=""
     for c in k:
@@ -273,144 +201,81 @@ def new_event(values):
         traceback.print_exc()
         db.rollback()
 
-def update_event():
-    while True:
-        event_ID = ui.get_numeric_input("What is the event ID of the event you wish to update? "
-                                        "Type 0 to exit without updating.", 'i')
-
-        if event_ID == 0:
-            return
-
-        elif is_ID('events', event_ID):
-
-            try:
-                while True:
-                    choice = ui.get_input("What column do you want to update?\n\n1. Type\n2. Date (MM/DD/YY)\n"
-                                          "3. Street Address\n4. City\n5. State\n"
-                                          "6. Zip code\n7. Contact\n8. Contact Phone\n\nEnter Selection: ")
-
-                    if choice == '1':
-                        ui.show_message("Previous Event Type: " + str(get_from_events(event_ID, 'type')))
-                        ui.show_message("Select the new event type:")
-                        updateData = ui.get_type_input(get_types('events'))
-                        sql = '''UPDATE events SET event_Type=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated event Type: " + str(get_from_events(event_ID, 'type')))
-                        return
-
-                    elif choice == '2':
-                        ui.show_message("Previous event date and time: " + str(get_from_events(event_ID, 'date')))
-                        updateData = ui.get_date_input('Enter the new event date')
-                        sql = '''UPDATE events SET event_Date=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated date: " + str(get_from_events(event_ID, 'date')))
-                        return
-
-                    elif choice == '3':
-                        ui.show_message("Previous street address: " + str(get_from_events(event_ID, 'street')))
-                        updateData = ui.get_input("Enter the street address of the event: ")
-                        sql = '''UPDATE events SET event_Street=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated street address: " + str(get_from_events(event_ID, 'street')))
-                        return
-
-                    elif choice == '4':
-                        ui.show_message("Previous City: " + str(get_from_events(event_ID, 'city')))
-                        updateData = ui.get_input("Enter the City in which the event takes place: ")
-                        sql = '''UPDATE events SET event_City=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated City: " + str(get_from_events(event_ID, 'city')))
-                        return
-
-                    elif choice == '5':
-                        ui.show_message("Previous State: " + str(get_from_events(event_ID, 'state')))
-                        updateData = ui.get_state_input("Enter the state in which the event takes place: ")
-                        sql = '''UPDATE events SET event_State=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated State: " + str(get_from_events(event_ID, 'state')))
-                        return
-
-                    elif choice == '6':
-                        ui.show_message("Previous zip code: " + str(get_from_events(event_ID, 'zip')))
-                        updateData = ui.get_zip_input("Enter the zip code where the event takes place: ")
-                        sql = '''UPDATE events SET event_zip=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated zip code: " + str(get_from_events(event_ID, 'zip')))
-                        return
-
-                    elif choice == '7':
-                        ui.show_message("Previous event Contact: " + str(get_from_events(event_ID, 'contact')))
-                        updateData = ui.get_input("Enter the full name of the contact person for this event: ")
-                        sql = '''UPDATE events SET event_Contact=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated event Contact: " + str(get_from_events(event_ID, 'contact')))
-                        return
-
-                    elif choice == '8':
-                        ui.show_message("Previous Contact phone number: " + str(get_from_events(event_ID, 'phone')))
-                        updateData = ui.get_phone_input(
-                            "Enter the phone number of the contact person for this event (xxx-xxx-xxxx): ")
-                        sql = '''UPDATE events SET event_Contact_Phone=? WHERE event_ID=?'''
-                        c.execute(sql, (updateData, event_ID,))
-                        db.commit()
-                        ui.show_message("Updated Contact phone number: " + str(get_from_events(event_ID, 'phone')))
-                        return
-
-                    else:
-                        ui.show_message("Please enter a choice")
-            except sqlite3.Error:
-                ui.show_message('An error occured while trying to update events table.  '
-                                'Changes will be rolled back.')
-                traceback.print_exc()
-                db.rollback()
+def update_event(choice, event_ID, updateData):
+    try:
+        if choice=='1':
+            sql = '''UPDATE events SET event_Type=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='2':
+            sql = '''UPDATE events SET event_Date=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='3':
+            sql = '''UPDATE events SET event_Street=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='4':
+            sql = '''UPDATE events SET event_City=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='5':
+            sql = '''UPDATE events SET event_State=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='6':
+            sql = '''UPDATE events SET event_zip=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='7':
+            sql = '''UPDATE events SET event_Contact=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
+        elif choice=='8':
+            sql = '''UPDATE events SET event_Contact_Phone=? WHERE event_ID=?'''
+            c.execute(sql, (updateData, event_ID,))
+            db.commit()
         else:
-            ui.show_message("Please enter a valid ID.")
-            raise MyError('invalid ID')
+            raise MyError('Data passed to get from events for which there is no code written')
+    except sqlite3.Error:
+        ui.show_message('An error occured while trying to update events table.  Changes will be rolled back.')
+        traceback.print_exc()
+        db.rollback()
+
+
 
 def get_from_events(event_ID, value):
     results=c.execute('SELECT * FROM events WHERE event_ID=?', (event_ID,))
     c.row_factory=sqlite3.Row
     r=""
     try:
+        if value=='all':
+            for result in results:
+                return result
         if value=='date':
             for result in results:
-                r=result['event_Date']
-            return r
+                return result['event_Date']
         elif value=='type':
             for result in results:
-                r=result['event_Type']
-            return r
+                return result['event_Type']
         elif value=='street':
             for result in results:
-                r=result['event_Street']
-            return r
+                return result['event_Street']
         elif value == 'city':
             for result in results:
-                r = result['event_City']
-            return r
+                return result['event_City']
         elif value=='state':
             for result in results:
-                r=result['event_State']
-            return r
+                return result['event_State']
         elif value == 'zip':
             for result in results:
-                r = result['event_Zip']
-            return r
+                return result['event_Zip']
         elif value=='contact':
             for result in results:
-                r=result['event_Contact']
-            return r
+                return result['event_Contact']
         elif value=='phone':
             for result in results:
-                r=result['event_Contact_Phone']
-            return r
+                return result['event_Contact_Phone']
         else:
             raise MyError('value passed with no corresponding code')
     except sqlite3.Error:
@@ -419,12 +284,9 @@ def get_from_events(event_ID, value):
 
 def event_record_format(record):
     '''Format record for display'''
-    ui.show_message("Events Table")
-    ui.events_header()
 
     address = str(record['event_Street']+ ", " + record['event_City'] +", " + record['event_State'] + ", "+
-                  record['event_Zip']+ " \t ")
-
+                  record['event_Zip'])
     k=record.keys()
     a=""
     for n in k:
@@ -433,6 +295,7 @@ def event_record_format(record):
         elif n == "event_Street":
             a=a+add_spaces(address, 'address')
     ui.show_message (a)
+
 
 
 
@@ -476,7 +339,7 @@ def new_event_sales(values):
         c.execute(sql, values)
         db.commit()
         v=[('remaining', values[1], values[2])]
-        update_item_orders(v) #update remaining in item_orders to show how many items are left from the order
+        update_order_items(v) #update remaining in order_items to show how many items are left from the order
 
     except sqlite3.IntegrityError:
         ui.show_message('wrong data type?  Changes will be rolled back.')
@@ -487,49 +350,6 @@ def new_event_sales(values):
         ui.show_message("An error occured while trying to add a new event_sales record.  Changes will be rolled back.")
         traceback.print_exc()
         db.rollback()
-def update_event_sales_ui():
-    while True:
-        i_ID = ui.get_numeric_input("What is the item ID of the entry that you wish to update?  "
-                                    "Type 0 to exit without updating.", 'i')
-        e_ID = 0
-        if i_ID != 0:
-            e_ID = ui.get_numeric_input("What is the event ID of the entry that you wish to update? "
-                                        "Type 0 to exit without updating.", 'i')
-        if ((e_ID == '0') | (i_ID == '0')):
-            return
-        elif is_ID('event_sales', e_ID, i_ID):
-
-            while True:
-
-                choice = ui.get_input("\nWhat column do you want to update?\n\n1. Total Sold\n"
-                                      "2. Sale Price\n\nEnter Selection: ")
-                if choice == '1':
-                    ui.show_message("Previous number of item sold: " +
-                                    str(get_from_event_sales(e_ID, i_ID, 'total')))
-                    updateData = ui.get_numeric_input(
-                        "Enter the total number of this item sold at the event: ", 'i')
-                    update_event_sales(choice, e_ID, i_ID, updateData)
-                    ui.show_message("Updated number of item sold: " +
-                                    str(get_from_event_sales(e_ID, i_ID, 'total')))
-                    return
-                elif choice == '2':
-                    ui.show_message("Previous sales price: " + str(get_from_event_sales(e_ID, i_ID, 'price')))
-                    updateData = ui.get_numeric_input("Enter the new sale price: ", 'f')
-                    update_event_sales(choice, e_ID, i_ID, updateData)
-                    ui.show_message("Updated sales price: " + str(get_from_event_sales(e_ID, i_ID, 'price')))
-                    return
-        else:
-            if (is_ID('events', e_ID)) & (is_ID('items', i_ID)):
-                ui.show_message("No record of this item being sold at this event.")
-                raise MyError("Item wasn't sold at this event")
-            elif (is_ID('events', e_ID)):
-                ui.show_message("Please verify that this item ID is correct")
-                raise MyError("item ID incorrect?")
-            elif (is_ID('items', i_ID)):
-                ui.show_message("Please verify that this event ID is correct")
-                raise MyError("event ID incorrect?")
-            else:
-                raise MyError('Other issue occured while trying to update event_sales')
 
 def update_event_sales(choice,e_ID,i_ID,updateData):
     try:
@@ -552,14 +372,15 @@ def get_from_event_sales(e_ID, i_ID, value):
     c.row_factory = sqlite3.Row
     r = ""
     try:
+        if value == 'all':
+            for result in results:
+                return result
         if value == 'total':
             for result in results:
-                r = result['ordered_Total']
-            return r
+                return result['ordered_Total']
         elif value == 'price':
             for result in results:
-                r = result['ordered_Price']
-            return r
+                return result['ordered_Price']
         else:
             raise MyError('value passed with no corresponding code')
     except sqlite3.Error:
@@ -568,8 +389,6 @@ def get_from_event_sales(e_ID, i_ID, value):
 
 def event_sales_record_format(record, tax):
     '''Format record for display'''
-    ui.show_message('Event Sales Table')
-    ui.event_sales_header()
     k=record.keys()
     #print (k)
     a=""
@@ -601,28 +420,21 @@ def display_event_sales():
             event_sales_record_format(record, tax)
         else:
             event_sales_record_format(record, 0.00)
-        #if (record['event_State']) != state: #state is global set to value stored in database
-        #    event_sales_record_format(record, 0.00)
-        #elif (record['event_State'] == state) & (record['item_Taxable'] == 1):
-        #    tax = salesTax(record['sales_Price'], record['sales_Total'])  # sales tax for this item
-        #    event_sales_record_format(record, tax)
-        #else:
-        #    event_sales_record_format(record, 0.00)
     return
 
 
 
 
 
-def create_item_orders_table():
+def create_order_items_table():
     try:
-        sql='create table if not exists item_orders ' \
+        sql='create table if not exists order_items ' \
             '(order_ID integer not null, item_ID integer not null, ordered_Total integer not null, ' \
-            'ordered_Cost real not null, ordered_Memo text DEFAULT NULL, ordered_Remaining real, ' \
-            'CONSTRAINT item_orders PRIMARY KEY (order_ID, item_ID))'
+            'ordered_Cost real not null, ordered_Memo text DEFAULT NULL, ordered_Remaining int, ' \
+            'CONSTRAINT order_items PRIMARY KEY (order_ID, item_ID))'
         c.execute(sql)
         db.commit()
-        c.execute('SELECT * FROM item_orders')
+        c.execute('SELECT * FROM order_items')
         rec=c.fetchall()
         ordered=[(1,1,50,8.00, '5 percent off for bulk order', 50),
                  (1,2,75,8.00, '5 percent off for bulk order', 75),
@@ -632,28 +444,36 @@ def create_item_orders_table():
                  (3,6,40,5.00, 'Nothing ', 40)]
 
         if len(rec) <1:
-            sql2='INSERT INTO item_orders ' \
+            sql2='INSERT INTO order_items ' \
                  '(order_ID, item_ID, ordered_Total, ordered_Cost, ordered_Memo, ordered_Remaining) VALUES (?,?,?,?,?,?)'
 
             c.executemany(sql2, ordered)
             db.commit()
     except sqlite3.Error:
-        ui.show_message('An error occurred while trying to create item_orders table')
+        ui.show_message('An error occurred while trying to create order_items table')
         traceback.print_exc()
 
+# def get_order_items_remaining(item_ID):
+#     sql = 'SELECT order_items.order_ID, ordered_Total, ordered_Cost, ordered_Remaining, orders.order_Received' \
+#           'FROM order_items' \
+#           'INNER JOIN orders ON orders.order_ID=order_items.order_ID' \
+#           'WHERE item_ID=? AND ordered_Remaining > 0' \
+#           'ORDER BY orders.Received DESC'
+#
+#     while True:
+#         records = c.execute(sql, (item_ID,))
+#         c.row_factory = sqlite3.Row
+#         for record in records:
+#             if record['ordered_Remaining']
 
+def get_from_order_items(order_ID, item_ID, value):
+    '''get record or column value by order ID and item ID value'''
+    sql2='SELECT * FROM order_items WHERE order_ID=? AND item_ID=?'
+    c.execute(sql2, (order_ID, item_ID,))
 
-def get_from_item_orders(order_ID, item_ID, value):
-    ''''''
-    sql='SELECT item_orders.order_ID, ordered_Total, ordered_Cost, ordered_Remaining, orders.order_Received' \
-        'FROM item_orders' \
-        'INNER JOIN orders ON orders.order_ID=item_orders.order_ID' \
-        'WHERE item_ID=? AND ordered_Remaining > 0' \
-        'ORDER BY orders.Received DESC'
-    sql2='SELECT * FROM item_orders WHERE order_ID=? AND item_ID=?'
-    c.execute(sql2, (order_ID, item_ID,)) #Might need comma after item_ID
-    #previously had while loop and test for order_Remaining being larger than 0
     r=c.fetchone()
+    if value=='all':
+        return r
     if value=='order':
         return r[0]
     elif value=='total':
@@ -663,19 +483,22 @@ def get_from_item_orders(order_ID, item_ID, value):
     elif value=='remaining':
         return r[3]
 
-def update_item_orders(values): #choice, order_ID, item_ID, *total
+def update_order_items(values): #choice, order_ID, item_ID, value, *total
     if values[0]=='total':
-        pass
+        sql='UPDATE order_items SET ordered_Total=? WHERE order_ID=? AND item_ID=?'
+        c.execute(sql,(values[3],values[1],values[2],))
     elif values[0]=='cost':
-        pass
+        sql = 'UPDATE order_items SET ordered_Cost=? WHERE order_ID=? AND item_ID=?'
+        c.execute(sql, (values[3], values[1], values[2],))
     elif values[0]=='note':
-        pass
-    elif values[0]=='remaining':
+        sql = 'UPDATE order_items SET ordered_Memo=? WHERE order_ID=? AND item_ID=?'
+        c.execute(sql, (values[3], values[1], values[2],))
+    elif values[0]=='remaining': #choice, item_ID, total
         total=values[3]
         while True:
-            sql = 'SELECT item_orders.order_ID, ordered_Total, ordered_Cost, ordered_Remaining, orders.order_Received' \
-                  'FROM item_orders' \
-                  'INNER JOIN orders ON orders.order_ID=item_orders.order_ID' \
+            sql = 'SELECT order_items.order_ID, ordered_Total, ordered_Cost, ordered_Remaining, orders.order_Received' \
+                  'FROM order_items' \
+                  'INNER JOIN orders ON orders.order_ID=order_items.order_ID' \
                   'WHERE item_ID=? AND ordered_Remaining > 0' \
                   'ORDER BY orders.Received DESC'
             c.execute(sql, (values[2],))  # Might need comma after item_ID
@@ -685,15 +508,15 @@ def update_item_orders(values): #choice, order_ID, item_ID, *total
             rem = r[3]
             left=rem-total
             if left<0:
-                # calculate difference, set this id to 0 and then look for next record in get_from_item_orders
-                sql='UPDATE item_orders SET ordered_Remaining = 0 WHERE order_ID=? AND item_ID=?'
+                # calculate difference, set this id to 0 and then look for next record in get_from_order_items
+                sql='UPDATE order_items SET ordered_Remaining = 0 WHERE order_ID=? AND item_ID=?'
                 c.execute(sql,(order_ID,values[2]))
                 total=left
 
             elif left >= 0:
 
-                # Update item_orders SET ordered_Rem.. = ? WHERE order_ID=? AND item_ID=? (remain,order_ID,values[2])
-                sql2 = 'UPDATE item_orders SET orderd_Remaining =? WHERE order_ID=? AND item_ID=?'
+                # Update order_items SET ordered_Rem.. = ? WHERE order_ID=? AND item_ID=? (remain,order_ID,values[2])
+                sql2 = 'UPDATE order_items SET orderd_Remaining =? WHERE order_ID=? AND item_ID=?'
                 c.execute(sql2, (left, order_ID, values[2]))
 
 def receive_Order(items):
@@ -728,6 +551,12 @@ def receive_Order(items):
         # return
 
 
+def order_items_record_format(record): #TODO write this
+    k = record.keys()
+    a = ""
+    for n in k:
+            a = a + add_spaces(str(record[n]), str(n))
+    ui.show_message(a)
 
 
 def create_orders_table():
@@ -739,11 +568,12 @@ def create_orders_table():
         rec=c.fetchall()
         orders=[('1','2018-01-01 10:30','2018-01-10 14:00'),
                 ('2','2018-01-01 11:00','2018-01-15 9:00'),
-                ('3','2018-01-05 13:15','2018-01-15 9:00')]
+                ('3','2018-01-05 23:15','2018-01-15 9:00')]
         openOrder=('1','2018-02-01 12:30')
         if len(rec) <1:
             c.executemany('INSERT INTO orders (vendor_ID, order_Date, order_Received) VALUES (?,?,?)', orders)
-            c.execute('INSERT INTO orders (vendor_ID, order_Date) VALUES (?,?,?)', openOrder)
+            db.commit()
+            c.execute('INSERT INTO orders (vendor_ID, order_Date) VALUES (?,?)', openOrder)
             db.commit()
     except sqlite3.Error:
         ui.show_message('An error occurred while trying to create orders table')
@@ -754,7 +584,7 @@ def new_Order(vendor, ordered):
     c.execute(sql,(vendor, ordered,))
     db.commit()
 
-def update_Orders(choice,order_ID,value):
+def update_order(choice,order_ID,value):
     if choice=='received':
         sql='UPDATE orders SET order_Received=? WHERE order_ID=?'
         c.execute(sql,(value,order_ID))
@@ -768,9 +598,39 @@ def get_from_orders(order_ID, value):
     #TODO write this
     pass
 
+def order_record_format(record):
+    '''Format record for display'''
+    k = record.keys()
+    # print (k)
+    a = ""
+    # if len(tax)>0:
+    #    t=float(tax[0])
+    if len(k) > 3:
+        k = ["order_ID", 'vendor_ID', 'order_Date']
+    for c in k:
+        a = a + add_spaces(str(record[c]), str(c))
+    if len(str(record[3]))>5:
+        a = a + add_spaces(record[3],'order_Received') #if we have received it, display the date
+    else:
+        a = a + " " #if we haven't displayed it, show a blank instead of None
+    ui.show_message(a)
 
-def orders_record_format(record):
-    pass
+
+# k = record.keys()
+#     #print (k, ' is keys')
+#     a=""
+#     for c in k:
+#         # if c == 'order_Received':
+#         #     r=record['order_Received']
+#         #     print('value ',r,' type ',type(r))
+#         #     if len(r)<=0:
+#         #         a=' '
+#         if c== 'order_Received':
+#             a='. . . . .'
+#         else:
+#             a=str(record[c])
+#         a=a+add_spaces(str(record[c]), str(c))
+#     ui.show_message(a)
 
 
 
@@ -778,95 +638,6 @@ def orders_record_format(record):
 
 
 
-
-def add_record(*table):
-
-    if len(table)<1:
-        table= ui.get_table_input()
-    if table=='items':
-        order=''
-        o=ui.get_numeric_input('What order ID is associated with this item?', 'i')
-        if is_ID('orders',o):
-            order=o
-        item_types = get_types('items')
-        item = ui.get_type_input(item_types)
-        description = ui.get_input("Please describe the item. (Example: 'white, blue logo' for a T-Shirt, or the title "
-                                   "for a CD or Poster.): ")
-        total_ordered = ui.get_numeric_input("How many items were ordered?", 'i')
-        cost_per_item = ui.get_numeric_input("How much does each item cost?", 'f')
-        orderNote=ui.get_input('Optional: write a note about this purchase (example: bulk purchase discount 10 percent): ')
-        is_taxable = ui.get_numeric_input("Enter 1 if this item is subject to sales tax, 0 if not: ", 'i')
-        new_item(order,item,description,total_ordered,cost_per_item,is_taxable,orderNote) #if there's a new item, there's a new item_orders record
-    elif table=='events':
-        type = ui.get_type_input(get_types('events'))
-        date = ui.get_date_input('Enter the event date')
-        street = ui.get_input("Enter the street address of the event: ")
-        city = ui.get_input("Enter the name of the city in which the event is located: ")
-        state = ui.get_input("Enter the state code of the state in which the event will take place: ")
-        zip = ui.get_input("Enter the zip code of the event location: ")
-        contact = ui.get_input("Enter the name of the contact person for this event: ")
-        phone = ui.get_input("Enter the phone number of the contact person for this event: ")
-        values = [(type, date, street, city, state, zip, contact, phone)]
-        new_event(values)
-    elif table=='event_sales':
-        while True:
-            e_ID = ui.get_numeric_input("Enter the event ID: ", 'i')
-            i_ID = ui.get_numeric_input("Enter the item ID: ", 'i')
-            if is_ID('event_sales', e_ID, i_ID):  # if this entry already exists in the table don't make a new one
-                ui.show_message("This record already exists in the table.  To change it, update the table.")
-                return
-            elif ((is_ID('events', e_ID)) & (is_ID('items', i_ID))):  # ID's exist, but the combo of them doesn't
-                s_total = ui.get_numeric_input("How many of the item were sold at this event?", 'i')
-                s_price = ui.get_numeric_input("What price was charged per item at this event?", 'f')
-                values = [e_ID, i_ID, s_total, s_price]
-                new_event(values)
-                return
-    elif table =='orders':
-        vendor=ui.get_numeric_input('Enter the vendor ID for this order: ','i')
-        date=ui.get_date_input('Enter the date and time this order was placed: ')
-        new_Order(vendor,date)
-    elif table =='item_orders':
-        while True:
-            done = False
-            while done == False:
-                choice = ui.get_numeric_input('1. New item\n2. Reorder of previous item\n3. Exit', 'i')
-                if choice == 3:
-                    break
-                if choice == 1:
-                    add_record('items')
-
-                else:
-                    while True:
-                        o_ID = ui.get_numeric_input("Enter the order ID: ", 'i')
-                        i_ID = ui.get_numeric_input("Enter the item ID: ", 'i')
-                        if is_ID('item_orders', o_ID, i_ID):  # if this entry already exists in the table don't make a new one
-                            ui.show_message("This record already exists in the table.  To change it, update the table.")
-                            return
-                        elif ((is_ID('events', o_ID)) & (is_ID('items', i_ID))):
-                            if choice == 2:
-                                order = ui.get_numeric_input('Enter the order id for this order: ', 'i')
-                                item_ID = ui.get_numeric_input('Enter the item id for this item: ', 'i')
-                                date = ui.get_date_input('Enter the date the order was received')
-                                total = ui.get_numeric_input('Enter the total number of items purchase: ', 'i')
-                                cost = ui.get_numeric_input('Enter the cost of each item: ', 'f')
-                                note = ui.get_input('Enter any notes about this purchase, such as discount amount: ')
-                                item = [order, item_ID, date, total, cost, note]
-                                receive_Order(item)
-
-                        elif choice == 3:
-                            break
-                        else:
-                            ui.show_message('got past actual code in add records item_orders') #TODO: would you ever get here?
-
-def update_record():
-    table= ui.get_table_input()
-    if table == 'items':
-
-        update_items()
-    elif table == 'events':
-        update_event()
-    elif table == 'event_sales':
-        update_event_sales()
 
 def delete_Record():
     """Delete a record from the database by ID"""
@@ -922,7 +693,7 @@ def search():
     if choice == '0':
         return
     elif choice == '1':
-        search_by_id()
+        search_by_id_ui()
     elif choice == '2':
         search_by_type()
     elif choice == '3':
@@ -942,35 +713,34 @@ def search():
 
 
 
-def search_by_id():
+def search_by_id_ui():
     table = ui.get_table_input()
 
     if table == 'items':
-        id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
-        records = c.execute('SELECT * FROM items WHERE item_ID=?', (id,))
+        i_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
+        records = get_from_items(i_id,'all')
         c.row_factory = sqlite3.Row
+
         ui.items_header()
         for record in records:
             item_record_format(record)
     elif table == 'events':
-        id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
-        records = c.execute('SELECT * FROM events WHERE event_ID=?', (id,))
+        e_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
+        records = get_from_events(e_id,'all')
         c.row_factory = sqlite3.Row
         ui.events_header()
         for record in records:
             event_record_format(record)
     elif table == 'event_sales':
         e_id = ui.get_numeric_input("Enter the event id you wish to search by: ", 'i')
-        m_id = ui.get_numeric_input("Enter the items id you wish to search by: ", 'i')
-        records = c.execute('SELECT * FROM event_sales WHERE event_ID=? AND item_ID=?', (e_id, m_id,))
+        i_id = ui.get_numeric_input("Enter the items id you wish to search by: ", 'i')
+        records = get_from_event_sales(e_id, i_id, 'all')
         c.row_factory = sqlite3.Row
-
+        ui.show_message('\033[2m'+'Event Sales'+'\033[0m')
         ui.event_sales_header()
         for record in records:
-            taxable=get_from_items(m_id, 'taxable')
-            state=get_from_events(e_id, 'state')
-            tax= salesTax(record['sales_Price'], record['sales_Total'])
-            if taxable & (state=='MN'):
+            if taxable(e_id,i_id):
+                tax = salesTax(record['sales_Price'], record['sales_Total'])
                 event_sales_record_format(record, tax)
             else:
                 event_sales_record_format(record, 0.00)
@@ -1000,13 +770,12 @@ def search_by_type():
         ty = event_types[t - 1]
         records = c.execute('SELECT * FROM events WHERE event_Type = ?', (ty,))
         c.row_factory = sqlite3.Row
-        ui.events_header()
+        ui.items_header()
         for record in records:
             event_record_format(record)
 
-def search_by_date(): #TODO get input from user to search by date.  User can search by date, or display table in order by date
+def search_by_date():
     # Show events ordered by date
-    # Maybe I should have a get input for formatting dates received from user.
     #today=datetime.today()
     #records = c.execute('SELECT * FROM events WHERE event_Date > ? ORDER BY event_Date ASC', (today,))
     #c.row_factory = sqlite3.Row
@@ -1040,12 +809,12 @@ def search_by_on_hand_ui():
     # Get items by quantity in inventory
     par = ui.get_numeric_input("Return items where remaining inventory is less than: ", 'i')
     a=search_by_on_hand()
-    ui.inventory_Header()
+    ui.inventory_header()
 
 
     for i in a:
         sold = i[1]
-        #order = get_from_item_orders(i[0], 'ordered')
+        #order = get_from_order_items(i[0], 'ordered')
         order= i[2]
         rem = order - sold
         if rem < par:
@@ -1053,23 +822,23 @@ def search_by_on_hand_ui():
 
 def search_by_on_hand():
     sql='SELECT items.item_ID, SUM(ordered_Remaining) ' \
-        'FROM item_orders ' \
-        'INNER JOIN items ON items.item_ID=item_order.item_ID ' \
+        'FROM order_items ' \
+        'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
         'GROUP BY items.item_ID '
 
     sql2='SELECT items.item_ID, SUM(ordered_Total) ' \
-         'FROM item_orders ' \
-         'INNER JOIN items ON items.item_ID=item_order.item_ID ' \
+         'FROM order_items ' \
+         'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
          'GROUP BY items.item_ID '
 
-    sql3='(SELECT DISTINCT item_ID FROM item_orders), ' \
+    sql3='(SELECT DISTINCT item_ID FROM order_items), ' \
          '(SELECT items.item_ID, SUM(ordered_Remaining) ' \
-         ' FROM item_orders ' \
-         ' INNER JOIN items ON items.item_ID=item_order.item_ID ' \
+         ' FROM order_items ' \
+         ' INNER JOIN items ON items.item_ID=order_items.item_ID ' \
          ' GROUP BY items.item_ID ), ' \
          '(SELECT items.item_ID, SUM(ordered_Total) ' \
-         ' FROM item_orders ' \
-         ' INNER JOIN items ON items.item_ID=item_order.item_ID ' \
+         ' FROM order_items ' \
+         ' INNER JOIN items ON items.item_ID=order_items.item_ID ' \
          ' GROUP BY items.item_ID )' \
 
     c.execute(sql)
@@ -1223,8 +992,38 @@ def view_table_ui():
     '''View a given table'''
     ui.show_message(' ')
     name=ui.get_table_input()
-    view_table(name)
+    if name=='items':
+        records=view_table(name)
+        ui.items_header()
+        for record in records:
+            item_record_format(record)
+        #for i in range(len(records)):
+        #    record=records.pop(i)
+        #    item_record_format(record)
 
+    elif name=='events':
+        records=view_table(name)
+        ui.events_header()
+        for record in records:
+            event_record_format(record)
+    elif name=='event_sales':
+        records = view_table(name)
+        ui.event_sales_header()
+        for record in records:
+            tax=0.00
+            if taxable(record['event_ID'],record['item_ID']):
+                tax=salesTax(record['sales_Price'],record['sales_Total'])
+            event_sales_record_format(record,tax)
+    elif name=='orders':
+        records = view_table(name)
+        ui.orders_header()
+        for record in records:
+            order_record_format(record)
+    elif name=='order_items':
+        records = view_table(name)
+        ui.order_items_header()
+        for record in records:
+            order_items_record_format(record)
 
 
 def view_table(name):
@@ -1233,19 +1032,42 @@ def view_table(name):
         if name == 'items':
             records = c.execute('SELECT * FROM items')
             c.row_factory = sqlite3.Row  # so that you can access columns by name
+            r=[]
             for record in records:
-                item_record_format(record)
-            return
+                r.append(record)
+            return r
+
         elif name == 'events':
             records = c.execute('SELECT * FROM events')
             c.row_factory = sqlite3.Row  # so that you can access columns by name
+            r = []
             for record in records:
-                event_record_format(record)
-            return
-        elif name == 'event_sales':
+                r.append(record)
+            return r
 
-            display_event_sales()
-            return
+        elif name == 'event_sales':
+            records = c.execute('SELECT * FROM event_sales')
+            c.row_factory = sqlite3.Row
+            r = []
+            for record in records:
+                r.append(record)
+            return r
+
+        elif name == 'orders':
+            records = c.execute('SELECT * FROM orders')
+            c.row_factory = sqlite3.Row  # so that you can access columns by name
+            r = []
+            for record in records:
+                r.append(record)
+            return r
+        elif name == 'order_items':
+            records = c.execute('SELECT * FROM order_items')
+            c.row_factory = sqlite3.Row  # so that you can access columns by name
+            r = []
+            for record in records:
+                r.append(record)
+            return r
+
     except sqlite3.Error:
         raise MyError('Something went wrong when trying to display the table')
 
@@ -1265,27 +1087,25 @@ def delete_table():
         db.rollback()
 
 
-def is_ID(table, id , *id2):
+def is_ID(table, id1 , *id2):
     """Searches given table for incidence of given id.  returns True if found, otherwise False."""
 
     try:
         if table=="items":
-            c.execute('SELECT * FROM items WHERE item_ID=?',(id,))
-            result=c.fetchone()
+            result=get_from_items(id1,'all')
             if len(result)>0:
                 return True
             else:
                 return False
         elif table=="events":
-            c.execute('SELECT * FROM events WHERE event_ID=?',(id,))
-            result=c.fetchone()
+            result=get_from_events(id1,'all')
             if len(result) > 0:
                 return True
             else:
                 return False
         elif table=="event_sales":
             i_id=id2[0] #Get value from tuple (don't know why this is coming in as a tuple, but this fixes it.)
-            results=c.execute('SELECT * FROM event_sales WHERE event_ID = ? AND item_ID = ?',(id, i_id,))
+            results=get_from_event_sales(id1, i_id, 'all')
             c.row_factory=sqlite3.Row
             for r in results:
                 if len(r.keys()) > 0:
@@ -1307,6 +1127,7 @@ def is_ID(table, id , *id2):
 
 def salesTax(price, total):
     """Sales tax owed using home state set in user settings"""
+    global percent
     return ((price * percent)/100)*total #percent is global set from database (for MN, percent should be 7.375)
 
 def get_types(table):
@@ -1382,53 +1203,52 @@ def close_database():
     db.close()
 
 def add_spaces(st, col):
+    d=0
+    if (col=='ordered_Memo'):
+        length = len(st)
+        d = 35 - length
+        st = st + (d * " ") + "\t" #if I take this and the following line out, it tells me the d variable is not used. WHY?
+        return st
     if (col =='item_Description') | (col=='iTotal'):
         length=len(st)
-        dif=30-length
-        st=st+(dif*" ")+"\t"
-        return st
-    elif col=='address':
+        d=30-length
+    elif (col=='address') :
         length=len(st)
-        dif=40-length
-        st=st+(dif*" ")+'\t'
-        return st
+        d=40-length
     elif (col=='event_Contact') :
         length=len(st)
-        dif=25-length
-        st=st+(dif*" ")+'\t'
-        return st
-    elif (col=='sales_Total') | (col=='sold'):
+        d=25-length
+    elif (col=='sales_Total') | (col=='sold') | (col=='ordered_Total'):
         length=len(st)
-        dif=14-length
-        st=st+(dif*" ")+" \t"
-        return st
+        d=14-length
     elif (col=='sales_Price') | (col=='sales_Tax'):
         length = len(str(st))
-        dif = 13 - length
+        d = 13 - length
         fl=float(st)
         s="%.2f" %fl
-        st = s + (dif * " ") + " \t"
+        st = s + (d * " ") + " \t"
         return st
-    elif col=='item_Total_Ordered':
+    elif (col=='ordered_Cost'):
+        length = len(str(st))
+        d = 10 - length
+        fl = float(st)
+        s = "%.2f" % fl
+        st = s + (d * " ") + " \t"
+        return st
+    elif (col=='item_Total_Ordered'):
         length = len(st)
-        dif = 10 - length
-        st = st + (dif * " ") + " \t\t"
-        return st
+        d = 10 - length
     elif (col=='iOrdered'):
         length = len(st)
-        dif = 16 - length
-        st = st + (dif * " ") + " \t"
-        return st
-    elif (col=='event_Date') :
+        d = 16 - length
+    elif (col=='event_Date')|(col=='ordered_Date'):
         length=len(st)
-        dif = 20 - length
-        st = st + (dif*" ") + " \t"
-        return st
+        d = 20 - length
     else:
         length=len(st)
-        dif=10-length
-        st=st+(dif*" ")+" \t"
-        return st
+        d=10-length
+    st = st + (d * " ") + "\t"
+    return st
 
 
 
@@ -1490,7 +1310,7 @@ def create_organization_table():
         c.execute('create table if not exists organizations (org_ID integer primary key, state, salesTaxPercent)')
         c.execute('SELECT * FROM organizations')
         rec=c.fetchall()
-        org=[('MN','7.375')]
+        org=[('MN',7.375)]
         if len(rec) <1:
             c.executemany('INSERT INTO organizations (state, salesTaxPercent) VALUES (?,?)', org)
             db.commit()
@@ -1513,3 +1333,10 @@ def settings_ui():
         sta=ui.get_state_input("Enter the new state code: ")
         per=ui.get_numeric_input('Enter the new sales tax percent as a decimal: ','f')
         change_settings(sta,per)
+
+def drop_settings():
+    c.execute('DROP TABLE IF EXISTS organization') #Delete table
+    db.commit()
+
+def delete_db():
+    c.execute('drop ')

@@ -123,7 +123,6 @@ def get_date_input(message):
                 if (count2==4)&(colon==1): #add seconds if not present
                     d=d+":00"
                 return d
-        print('Please copy the format exactly')
         show_message('Please use the given format.')
 
 def get_state_input(message):
@@ -154,16 +153,28 @@ def get_phone_input(message):
 
 
 def items_header():
-    show_message("Item ID: \tType: \t\tDescription: \t\t\t\t\tTotal Ordered: \tCost: \t\tTaxable?")
+    show_message("\033[1m"+"Items Table"+"\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Item ID: \tType: \t\tDescription: \t\t\t\t\tTax status: "+"\033[0m")
 
 def events_header():
-    show_message("Event ID: \tType: \t\tDate: \t\t\t\t\tAddress: \t\t\t\t\t\t\t\t\tContact: \t\t\t\t\tContact Phone: ")
+    show_message("\033[1m" + "Events Table" + "\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Event ID: \tType: \t\tDate: \t\t\t\t\tAddress: \t\t\t\t\t\t\t\t\tContact: \t\t\t\t\tContact Phone: "+"\033[0m")
 
 def event_sales_header():
-    show_message("Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax Collected: ")
+    show_message("\033[1m" + "Event Sales Table" + "\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax Collected: "+"\033[0m")
 
-def inventory_Header():
-    show_message("Item ID: \tItems Sold: \tItems Purchased: \tItems Remaining: ")
+def inventory_header():
+    show_message("\033[1m" + "Inventory Table" + "\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Item ID: \tItems Sold: \tItems Purchased: \tItems Remaining: "+"\033[0m")
+
+def orders_header():
+    show_message("\033[1m" + "Orders Table" + "\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Order ID: \tVendor ID: \tDate Ordered: \t\tDate Received:  "+"\033[0m")
+
+def order_items_header():
+    show_message("\033[1m" + "Item Orders Table" + "\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Order ID: \tItem ID: \tTotal Ordered: \tCost: \t\t\tOrder Memo: \t\t\t\t\t\tRemaining inventory: "+"\033[0m")
 
 def is_Float(n):
     try:
