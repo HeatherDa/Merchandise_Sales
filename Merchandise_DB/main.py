@@ -38,21 +38,23 @@ def use_choice(choice):
 
 def main():
     choice=None
-    #for i in range(5):
-    #    database.delete_table()
-    database.delete_table()
+    for i in range(5):
+        database.delete_table()
+    #database.delete_table()
+
+
     database.set_globals()
-
-
     database.create_items_table()
     database.create_events_table()
     database.create_event_sales_table()
     database.create_orders_table()
     database.create_order_items_table()
     database.create_organization_table()
-    database.auto_update_event_sales()
+    database.auto_update_event_sales2()
 
-    while choice !='7':
+    database.auto_up_test()
+
+    while choice !=7:
         choice= ui.display_menu()
         use_choice(choice)
     sys.exit()

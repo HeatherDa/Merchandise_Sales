@@ -313,11 +313,15 @@ def tax_and_profit_for_event_sales(records):
     raise MyError("I just wanted to stop here.")
 
 
+def auto_up_test(): #This doesn't work either.
+    pass
+    #sql='UPDATE event_sales SET sales_Tax = 1.00 WHERE event_ID=1 AND item_ID=1'
+    #c.execute(sql)
+    #db.commit()
 
 
 
-
-def auto_update_event_sales2():
+def auto_update_event_sales2(): #this doesn't work.
     records = c.execute('SELECT * FROM event_sales WHERE sales_Profit < 1 ') #records needing update
     c.row_factory=sqlite3.Row
 
@@ -326,7 +330,7 @@ def auto_update_event_sales2():
 
     for record in records:
         print(record['event_ID'],record['item_ID'],record['sales_Profit'])
-        # print('event_sales record',record.keys())
+        # print('event_szales record',record.keys())
         # print('record has: ',record['event_ID'], ' \t', record['item_ID'], ' \t',  record['sales_Total'], ' \t',  record['sales_Price'], ' \t',  record['sales_Tax'], ' \t',  record['sales_Profit'])
         # #I need to know for each item if it is taxable, what sales tax is due, and what purchase cost was for that item
         # #then I can calculate profit
@@ -350,19 +354,20 @@ def auto_update_event_sales2():
                         #print('sales price is ', record['sales_Price'])
                         #print('ordered_Cost is', r['ordered_Cost'])
                         ppitem=record['sales_Price'] - r['ordered_Cost']
-                        #print('per item profit is', ppitem)
+                        print('per item profit is', ppitem)
                         #print('tax is ', tax)
                         #print('sales_Total is ', record['sales_Total'])
                         profit += ((record['sales_Price'] - r['ordered_Cost']) * record['sales_Total'])  - tax
-                        #print('profit is ',profit) #THis number is right
+                        print('profit is ',profit) #THis number is right
+                        print('tax is ', tax)
                         rem = r['ordered_Remaining'] - record['sales_Total']
                         li = ['remainder', r['order_ID'], r['item_ID'], rem]
                         update_order_items(li)  # change Remaining to reflect sale
                         db.commit()
-                        li2 = (tax,profit,record['event_ID'],record['item_ID'],)
+                        li2 = (tax,profit,record['event_ID'],record['item_ID'],) #numbers are correct
 
                         c.execute('UPDATE event_sales '
-                                  'SET sales_Tax=? AND sales_Profit=? '
+                                  'SET sales_Tax=?, sales_Profit=? '
                                   'WHERE event_ID=? AND item_ID=?',(tax, profit, record['event_ID'],record['item_ID'],))
                         db.commit()
                         #view_table('event_sales')
