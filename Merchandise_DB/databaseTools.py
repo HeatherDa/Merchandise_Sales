@@ -9,33 +9,31 @@ def view_table_ui():
         records=database.view_table(name)
         ui.items_header()
         for record in records:
-            database.item_record_format(record)
+            ui.item_record_format(record)
 
     elif name=='events':
         records=database.view_table(name)
         ui.events_header()
         for record in records:
-            database.event_record_format(record)
+            ui.event_record_format(record)
     elif name=='event_sales':
         records = database.view_table(name)
         ui.event_sales_header()
         for record in records:
             tax=0.00
-            if database.taxable(record['event_ID'],record['item_ID']):
-                tax=database.salesTax(record['sales_Price'],record['sales_Total'])
-            database.event_sales_record_format(record,tax)
+            if database.is_taxable(record['event_ID'], record['item_ID']):
+                tax+=database.salesTax(record['sales_Price'],record['sales_Total'])
+            ui.event_sales_record_format(record)#,tax)
     elif name=='orders':
         records = database.view_table(name)
         ui.orders_header()
         for record in records:
-            database.order_record_format(record)
+            ui.order_record_format(record)
     elif name=='order_items':
         records = database.view_table(name)
         ui.order_items_header()
         for record in records:
-            database.order_items_record_format(record)
-
-
+            ui.order_items_record_format(record)
 
 def update_items_ui():
     while True:
@@ -155,37 +153,38 @@ def update_event_ui():
         else:
             ui.show_message("Please enter a valid ID.")
 
-def update_event_sales_ui():
+def update_event_sales_ui(): #TODO must write function to undo changes to inventory when sales_Total is decreased. This requires knowing which order_items record was decreased by the entry.
     while True:
-        i_ID = ui.get_numeric_input("What is the item ID of the entry that you wish to update?  "
-                                    "Type 0 to exit without updating.", 'i')
-        e_ID = 0
-        if i_ID != 0:
-            e_ID = ui.get_numeric_input("What is the event ID of the entry that you wish to update? "
-                                        "Type 0 to exit without updating.", 'i')
-        if ((e_ID == '0') | (i_ID == '0')):
+        choice = ui.get_input("\nWhat column do you want to update?\n\n1. Total Sold\n"
+                              "2. Sale Price\n3. Exit\n\nEnter Selection: ")
+        if (choice>0)&(choice<4):
+            break
+        if choice==3:
             return
-        elif database.is_ID('event_sales', e_ID, i_ID):
+        else:
 
             while True:
+                i_ID = ui.get_numeric_input("What is the item ID of the entry that you wish to update?  "
+                                    "Type 0 to exit without updating.", 'i')
 
-                choice = ui.get_input("\nWhat column do you want to update?\n\n1. Total Sold\n"
-                                      "2. Sale Price\n\nEnter Selection: ")
-                if choice == '1':
-                    ui.show_message("Previous number of item sold: " +
-                                    str(database.get_from_event_sales(e_ID, i_ID, 'total')))
-                    updateData = ui.get_numeric_input(
-                        "Enter the total number of this item sold at the event: ", 'i')
-                    database.update_event_sales(choice, e_ID, i_ID, updateData)
-                    ui.show_message("Updated number of item sold: " +
-                                    str(database.get_from_event_sales(e_ID, i_ID, 'total')))
-                    return
-                elif choice == '2':
-                    ui.show_message("Previous sales price: " + str(database.get_from_event_sales(e_ID, i_ID, 'price')))
-                    updateData = ui.get_numeric_input("Enter the new sale price: ", 'f')
-                    database.update_event_sales(choice, e_ID, i_ID, updateData)
-                    ui.show_message("Updated sales price: " + str(database.get_from_event_sales(e_ID, i_ID, 'price')))
-                    return
+                if database.is_ID('items',i_ID):
+                    e_ID = ui.get_numeric_input("What is the event ID of the entry that you wish to update? "
+                                        "Type 0 to exit without updating.", 'i')
+                    if database.is_ID('events',e_ID):
+                        break
+        if database.is_ID('event_sales', e_ID, i_ID):
+            if choice == '1':
+                ui.show_message("Previous number of item sold: " + str(database.get_from_event_sales(e_ID, i_ID, 'total')))
+                updateData = ui.get_numeric_input("Enter the total number of this item sold at the event: ", 'i')
+                database.update_event_sales(choice, e_ID, i_ID, updateData)
+                ui.show_message("Updated number of item sold: "+str(database.get_from_event_sales(e_ID, i_ID, 'total')))
+                return
+            elif choice == '2':
+                ui.show_message("Previous sales price: " + str(database.get_from_event_sales(e_ID, i_ID, 'price')))
+                updateData = ui.get_numeric_input("Enter the new sale price: ", 'f')
+                database.update_event_sales(choice, e_ID, i_ID, updateData)
+                ui.show_message("Updated sales price: " + str(database.get_from_event_sales(e_ID, i_ID, 'price')))
+                return
         else:
             if (database.is_ID('events', e_ID)) & (database.is_ID('items', i_ID)):
                 ui.show_message("No record of this item being sold at this event.")
@@ -197,23 +196,65 @@ def update_event_sales_ui():
                 ui.show_message("Some error occured trying to update event_sales")
 
 def update_order_ui():
-    choice=ui.get_numeric_input('1. Update date order was made\n2. Update date order was received\n3. Cancel\n\nEnter selection: ','i')
+    while True:
+        choice=ui.get_numeric_input('1. Update date order was made\n2. Update date order was received\n3. Cancel\n\nEnter selection: ','i')
+        if (choice >0) & (choice<4):
+            break
     if choice==3:
         return
     else:
         order_ID=ui.get_numeric_input('Enter the order ID: ','i')
-        if choice==1:
-            ui.show_message("Previous date order was placed: "+str(database.get_from_orders(order_ID,'order_Date')))
-            value=ui.get_date_input("Enter the new date and time")
-            database.update_order('ordered',order_ID,value)
-            ui.show_message("Updated Date order was placed: "+str(database.get_from_orders(order_ID,'order_Date')))
+        if database.is_ID('orders',order_ID):
+            if choice==1:
+                ui.show_message("Previous date order was placed: "+str(database.get_from_orders(order_ID,'order_Date')))
+                value=ui.get_date_input("Enter the new date and time")
+                database.update_order('ordered',order_ID,value)
+                ui.show_message("Updated Date order was placed: "+str(database.get_from_orders(order_ID,'order_Date')))
+                return
+            elif choice==2:
+                ui.show_message("Previous date order was received: " + str(database.get_from_orders(order_ID, 'order_Received')))
+                value = ui.get_date_input("Enter the new date and time")
+                database.update_order('received',order_ID,value)
+                ui.show_message("Updated Date order was received: " + str(database.get_from_orders(order_ID, 'order_Received')))
+                return
+def update_order_item_ui():
+    while True:
+        choice=ui.get_numeric_input('1. Update Total Ordered\n2. Update Ordered Cost\n3. Update Order Memo\n'
+                                '4. Update Remaining Inventory\n5. Cancel\n\nEnter selection: ','i')
+        if (choice >0) & (choice<6):
+            break
+    if choice == 5:
+        return
+    else:
+        order_ID = ui.get_numeric_input('Enter the order ID: ', 'i')
+        item_ID = ui.get_numeric_input('Enter the item ID: ', 'i')
+
+        if choice == 1:
+            ui.show_message("")
+            value=ui.get_numeric_input('Enter the new total: ', 'i')
+            values = ['total', order_ID, item_ID, value]
+            database.update_order_items(values) #choice (st), order_ID, item_ID, value, *total
             return
-        elif choice==2:
-            ui.show_message("Previous date order was received: " + str(database.get_from_orders(order_ID, 'order_Received')))
-            value = ui.get_date_input("Enter the new date and time")
-            database.update_order('received',order_ID,value)
-            ui.show_message("Updated Date order was received: " + str(database.get_from_orders(order_ID, 'order_Received')))
+        elif choice ==2:#cost
+            ui.show_message("")
+            value = ui.get_numeric_input('Enter the new cost: ', 'f')
+            values = ['cost', order_ID, item_ID, value]
+            database.update_order_items(values)
             return
+        elif choice ==3:#note
+            ui.show_message("")
+            value = ui.get_input('Enter the new note: ')
+            values = ['note', order_ID, item_ID, value]
+            database.update_order_items(values)
+            return
+        elif choice ==4:#this is allowed because inventory could decrease due to some cause other than sales (theft etc.)
+            ui.show_message("")
+            value = ui.get_numeric_input('Enter the new remaining inventory: ', 'i')
+            values = ['remainder', order_ID, item_ID, value]
+            database.update_order_items(values)
+            return
+        else:
+            ui.show_message('Not a valid choice')
 
 def add_record(*table):
 

@@ -162,7 +162,7 @@ def events_header():
 
 def event_sales_header():
     show_message("\033[1m" + "Event Sales Table" + "\033[0m")
-    show_message("\033[1m"+"\033[4m"+"Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax Collected: "+"\033[0m")
+    show_message("\033[1m"+"\033[4m"+"Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax: \t\tProfit per item for event: "+"\033[0m")
 
 def inventory_header():
     show_message("\033[1m" + "Inventory Table" + "\033[0m")
@@ -212,16 +212,21 @@ def add_spaces(st, col):
     elif (col=='event_Contact') :
         length=len(st)
         d=25-length
-    elif (col=='sales_Total') | (col=='sold') | (col=='ordered_Total'):
+    elif (col=='sales_Price') | (col=='sales_Total') | (col=='sold') | (col=='ordered_Total') | (col=='sales_Profit') | (col=='sales_Tax'):
         length=len(st)
-        d=14-length
-    elif (col=='sales_Price') | (col=='sales_Tax'):
-        length = len(str(st))
-        d = 13 - length
-        fl=float(st)
-        s="%.2f" %fl
+        d=10-length
+        fl = float(st)
+        s = "%.2f" % fl
         st = s + (d * " ") + " \t"
         return st
+
+    #elif  :
+    #    length = len(str(st))
+    #    d = 13 - length
+    #    fl=float(st)
+    #    s="%.2f" %fl
+    #    st = s + (d * " ") + " \t"
+    #    return st
     elif (col=='ordered_Cost') | (col=='profit'):
         length = len(str(st))
         d = 10 - length
@@ -268,6 +273,7 @@ def profit_result_format(record, profit):
     show_message(a+add_spaces(str(profit), 'profit'))
 
 
+
 def event_record_format(record):
     '''get record, display row'''
 
@@ -282,7 +288,7 @@ def event_record_format(record):
             a = a + add_spaces(address, 'address')
     show_message(a)
 
-def event_sales_record_format(record, tax):
+def event_sales_record_format(record):#, tax, profit):
     '''get record and salestax, display row'''
     k=record.keys()
     #print (k)
@@ -290,12 +296,18 @@ def event_sales_record_format(record, tax):
     #if len(tax)>0:
     #    t=float(tax[0])
 
-    if len(k)>4:
-        k=["event_ID", 'item_ID', 'sales_Total', 'sales_Price']
-
+    # if len(k)>4:
+    #     k=["event_ID", 'item_ID', 'sales_Total', 'sales_Price']
+    #
+    # for col in k:
+    #     a=a+add_spaces(str(record[col]), str(col))
+    # show_message(a + add_spaces(tax, 'sales_Tax') + add_spaces(profit, 'profit'))
     for col in k:
-        a=a+add_spaces(str(record[col]), str(col))
-    show_message(a + add_spaces(tax, 'sales_Tax'))
+        if record[col] is not None:
+            a = a + add_spaces(str(record[col]), str(col))
+        else:
+            a = a + "None \t\t "
+    show_message(a)
 
     def order_items_record_format(record):  # TODO write this
         k = record.keys()
@@ -327,4 +339,12 @@ def inventory_record_format(k):
     column=['item_ID','sold','iOrdered','iTotal']
     for col in k:
         a=a+add_spaces(str(col), str(column[k.index(col)]))
+    show_message(a)
+
+def order_items_record_format(record):
+    a=""
+    k=record.keys()
+
+    for col in k:
+        a=a+add_spaces(str(record[col]),str(col))
     show_message(a)

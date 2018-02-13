@@ -1,4 +1,5 @@
-from Merchandise_DB import database, ui, databaseTools
+from Merchandise_DB import database, ui, databaseTools, queries
+import sys
 
 #def close_database():
 #    db.close()
@@ -7,31 +8,31 @@ from Merchandise_DB import database, ui, databaseTools
 def use_choice(choice):
     if choice==1:
         databaseTools.view_table_ui()
-        return
+        return 1
 
     elif choice==2:
         update_record()
-        return
+        return 2
 
     elif choice==3:
         add_record()
-        return
+        return 3
 
     elif choice==4:
         delete_record()
-        return
+        return 4
 
     elif choice==5:
         search()
-        return
+        return 5
 
     elif choice==6:
         databaseTools.settings_ui()
-        return
+        return 6
 
     elif choice==7:
         database.close_database()
-        return
+        return 7
 
 
 
@@ -39,8 +40,7 @@ def main():
     choice=None
     #for i in range(5):
     #    database.delete_table()
-    #database.delete_table()
-    #database.drop_settings()
+    database.delete_table()
     database.set_globals()
 
 
@@ -50,10 +50,12 @@ def main():
     database.create_orders_table()
     database.create_order_items_table()
     database.create_organization_table()
+    database.auto_update_event_sales()
 
     while choice !='7':
         choice= ui.display_menu()
         use_choice(choice)
+    sys.exit()
 
 def view_table():
     pass
@@ -82,19 +84,19 @@ def search():
     if choice == '0':
         return
     elif choice == '1':
-        databaseTools.search_by_id_ui()
+        queries.search_by_id_ui()
     elif choice == '2':
-        databaseTools.search_by_type_ui()
+        queries.search_by_type_ui()
     elif choice == '3':
-        databaseTools.search_by_date_ui() #use original choice 3 code to display results, use ui to get date input from user
+        queries.search_by_date_ui() #use original choice 3 code to display results, use ui to get date input from user
     elif choice == '4':
-        databaseTools.search_by_on_hand_ui()
+        queries.search_by_on_hand_ui()
     elif choice == '5':
-        databaseTools.search_by_salesTax_due_ui()
+        queries.search_by_salesTax_due_ui()
     elif choice == '6':
-        databaseTools.search_by_profit_ui()
+        queries.search_by_profit_ui()
     elif choice == '7':
-        databaseTools.search_by_event_ui()
+        queries.search_by_event_ui()
 
 
 
