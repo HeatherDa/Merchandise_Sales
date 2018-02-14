@@ -20,9 +20,9 @@ def view_table_ui():
         records = database.view_table(name)
         ui.event_sales_header()
         for record in records:
-            tax=0.00
-            if database.is_taxable(record['event_ID'], record['item_ID']):
-                tax+=database.salesTax(record['sales_Price'],record['sales_Total'])
+            #tax=0.00
+            #if database.is_taxable(record['event_ID'], record['item_ID']):
+            #    tax+=database.salesTax(record['sales_Price'],record['sales_Total'])
             ui.event_sales_record_format(record)#,tax)
     elif name=='orders':
         records = database.view_table(name)

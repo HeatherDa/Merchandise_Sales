@@ -6,8 +6,8 @@ from Merchandise_DB import ui
 
 db = sqlite3.connect('merchandising_db.db') #Creates db file or opens if it already exists
 c=db.cursor()
-global state #homestate of organization
-global percent #percent of salestax due when selling in homestate
+state =""#homestate of organization
+percent = 0#percent of salestax due when selling in homestate
 
 def set_globals():
     '''
@@ -252,219 +252,100 @@ def get_from_events(event_ID, value):
         ui.show_message("An error ocurred while searching for " + value + ".")
         traceback.print_exc()
 
-
-def tax_and_profit_for_event_sales(records):
-    #get cost per item in sales event using code in search profit
-    #pass back a list of values (sales_Tax, sales_Profit, e_ID, i_ID)
-
-    # sql2='SELECT order_items.order_ID, order_items.item_ID, ordered_Total, ordered_Cost, ordered_Remaining, order.Date ' \
-    #      'FROM order_items' \
-    #      'INNER JOIN orders ON orders.order_ID=order_items.order_ID ' \
-    #      'WHERE item_ID=? AND ordered_remaining > 0' \
-    #      'ORDER BY order_Received'
-
-    sql='SELECT * ' \
-        'FROM event_sales ' \
-        'INNER JOIN items ON items.item_ID=event_sales.item_ID ' \
-        'WHERE event_ID = ? AND event_sales.item_ID = ? ' \
-    #or get all from event sales
-    #get taxable from items
-
-    for record in records:
-
-        tax=0.00
-        if get_from_items(record['item_ID'], 'item_Taxable'):
-            tax=salesTax(record['sales_Price'], record['sales_Total'])
-        rec=get_from_order_items(record['item_ID'],'all for cost')
-        while rec is not None:
-            for r in rec:
-                profit=0.00
-                total=record['sales_Total']
-                if (r is not None) & (r['ordered_Remaining']>= total):
-                    if profit == 0.00:
-                        profit=((r['ordered_Cost']-record['sales_Price'])-tax)*record['sales_Total']
-                        rem=r['ordered_Remaining']-record['sales_Total']
-                        li=['remainder', r['order_ID'], r['item_ID'], rem]
-                        update_order_items(li)#change Remaining to reflect sale
-
-                    else:
-                        pass
-
-
-
-
-
-
-    if rec is None:
-        #print('rec is none')
-        raise MyError('Why are there no results?')
-    else:
-        #print(type(rec))
-        for r in rec:
-            #print(r.keys())
-            pass
-
-    for record in rec:
-        #print (record.keys())
-        #print (record['order_ID'], ' \t\t\t', record['item_ID'],' \t\t\t', record['ordered_Total'],' \t\t\t', record['ordered_Cost'],' \t\t\t',
-        #       record['ordered_Remaining'],' \t\t\t\t', record['event_ID'],' \t\t\t', record['sales_Total'],' \t\t\t',
-        #       record['sales_Price'])
-        pass
-    raise MyError("I just wanted to stop here.")
-
-
-
-
-
-
-def auto_update_event_sales2():
+def auto_update_event_sales(): #TODO WHY DOES THIS STOP IN THE MIDDLE OF THE FIFTH PASS?
     records = c.execute('SELECT * FROM event_sales WHERE sales_Profit < 1 ') #records needing update
     c.row_factory=sqlite3.Row
-
-    # for record in records:
-    #     print('okay here')
-
+    myRecords=[]
+    count=0
     for record in records:
-        print(record['event_ID'],record['item_ID'],record['sales_Profit'])
-        # print('event_sales record',record.keys())
-        # print('record has: ',record['event_ID'], ' \t', record['item_ID'], ' \t',  record['sales_Total'], ' \t',  record['sales_Price'], ' \t',  record['sales_Tax'], ' \t',  record['sales_Profit'])
-        # #I need to know for each item if it is taxable, what sales tax is due, and what purchase cost was for that item
-        # #then I can calculate profit
-        # for record in records:
-        #     print(record, "is type", type(record))
+        count=count+1
+        myRecords.append(record)
+    print('# of records in records is ',count)
+    print('# of records in myRecords is ',len(myRecords))
+    for record in myRecords:
+        print(record)
+        #find sales tax for this record
         tax = 0.00
-        if is_taxable(record['event_ID'], record['item_ID']):
-            tax = salesTax(record['sales_Price'], record['sales_Total'])
-        rec = get_from_order_items(record['item_ID'], 'all for cost')
-        if rec is not None:
-            #print('rec is not None')
-            for r in rec:
-                profit = 0.00
-                total = record['sales_Total']
-
-                if (r is not None) & (r['ordered_Remaining'] >= total): #enough in remaining to cover total
-
-                    if record['sales_Total'] == total:
-                        #first record looked at, and there was enough inventory
-                        # for this order to cover items sold so no combined profit calculation with different costs
-                        #print('sales price is ', record['sales_Price'])
-                        #print('ordered_Cost is', r['ordered_Cost'])
-                        ppitem=record['sales_Price'] - r['ordered_Cost']
-                        #print('per item profit is', ppitem)
-                        #print('tax is ', tax)
-                        #print('sales_Total is ', record['sales_Total'])
-                        profit += ((record['sales_Price'] - r['ordered_Cost']) * record['sales_Total'])  - tax
-                        #print('profit is ',profit) #THis number is right
-                        rem = r['ordered_Remaining'] - record['sales_Total']
-                        li = ['remainder', r['order_ID'], r['item_ID'], rem]
-                        update_order_items(li)  # change Remaining to reflect sale
-                        db.commit()
-                        li2 = (tax,profit,record['event_ID'],record['item_ID'],)
-
-                        c.execute('UPDATE event_sales '
-                                  'SET sales_Tax=? AND sales_Profit=? '
-                                  'WHERE event_ID=? AND item_ID=?',(tax, profit, record['event_ID'],record['item_ID'],))
-                        db.commit()
-                        #view_table('event_sales')
-                    else:
-                        pass
-
-        #sql = ('UPDATE event_sales SET sales_Tax=? AND sales_Proft=? WHERE event_ID=? AND item_ID=?')
-        #c.execute(sql,values)
-        #c.row_factory=sqlite3.Row
-
-    #raise MyError('Got to the end of the function')
-    #TODO make list of records and pass to subfunction to avoid calling database twice for same query
-
-    #for record in records:
-
-    #    tax_and_profit_for_event_sales(record)
-
-def auto_update_event_sales(): #TODO WHY DOESN'T THIS WORK !!!!!!!
-    records = c.execute('SELECT * FROM event_sales WHERE sales_Profit < 1 ') #records needing update
-    c.row_factory=sqlite3.Row
-
-    # for record in records:
-    #     print('okay here')
-
-    for record in records:
-
-        #print(record['event_ID'],record['item_ID'],record['sales_Profit'])
-        # print('event_sales record',record.keys())
-        # print('record has: ',record['event_ID'], ' \t', record['item_ID'], ' \t',  record['sales_Total'], ' \t',  record['sales_Price'], ' \t',  record['sales_Tax'], ' \t',  record['sales_Profit'])
-        # #I need to know for each item if it is taxable, what sales tax is due, and what purchase cost was for that item
-        # #then I can calculate profit
-        # for record in records:
-        #     print(record, "is type", type(record))
-        tax = 0.00
-        if is_taxable(record['event_ID'], record['item_ID']):
-            tax = salesTax(record['sales_Price'], record['sales_Total'])
-        rec = get_from_order_items(record['item_ID'], 'all for cost')
         total = record['sales_Total']#TODO Check for insufficient inventory for sale
-        if rec is not None:
-            while total !=0:
-                profit = 0.00
-                for r in rec:
+        if is_taxable(record['event_ID'], record['item_ID']):
+            tax = salesTax(record['sales_Price'], record['sales_Total'])
+        print('tax = ',tax)
+        print('total= ',total)
+        profit = 0.00
+        #all_inv=get_from_order_items(record['item_ID'], 'all inv')
+        inv=0
+        rec = get_from_order_items(record['item_ID'], 'all for cost')
+        for r in rec:
+            inv+=r['ordered_Remaining']
+        print('total inventory remianing',inv)
 
 
-                    if (r is not None) & (r['ordered_Remaining'] >= total): #enough in remaining to cover total
 
-                        if record['sales_Total'] == total:
-                            #first record looked at, and there was enough inventory
-                            # for this order to cover items sold so no combined profit calculation with different costs
-                            ppitem=record['sales_Price'] - r['ordered_Cost']
-                            profit = (ppitem * record['sales_Total'])  - tax
-                            rem = r['ordered_Remaining'] - record['sales_Total']
-                            li = ['remainder', r['order_ID'], r['item_ID'], rem]
-                            update_order_items(li)  # change Remaining to reflect sale (this sort of works)
-                            db.commit()
-                            li2 = (float(tax),float(profit),int(record['event_ID']),int(record['item_ID']),)
-                            try:
-                                sql5='UPDATE event_sales ' \
-                                    'SET sales_Tax=? AND sales_Profit=? ' \
-                                    'WHERE event_ID=? AND item_ID=?'
-                                c.execute(sql5,(li2))#tax, profit, record['event_ID'],record['item_ID'],))
-                                db.commit()
-                                total-=total
-                                return
-                            except sqlite3.Error:
-                                traceback.print_exc()
-                                raise MyError('Fuck you stupid program')
-                        elif (record['sales_Total'])>total:
-                            #2nd record examined, and between the two there was enough inventory
-                            #calculate combined profit
-                            ppitem = record['sales_Price'] - r['ordered_Cost']
-                            profit = (ppitem * total) - tax
-                            rem = r['ordered_Remaining'] - total
-                            li = ['remainder', r['order_ID'], r['item_ID'], rem]
-                            update_order_items(li)  # change Remaining to reflect sale (this sort of works)
-                            db.commit()
-                            li2 = [tax, profit, record['event_ID'], record['item_ID']]
-                            c.execute('UPDATE event_sales '
-                                      'SET sales_Tax=?, sales_Profit=? '
-                                      'WHERE event_ID=? AND item_ID=?',(li2))
-                                      #(tax, profit, record['event_ID'], record['item_ID'],))
-                            db.commit()
-                            total -= total
-                            return
-                    elif (r is not None) & (r['ordered_Remaining']<total):
-                        ppitem = record['sales_Price'] - r['ordered_Cost']
-                        total -=r['ordered_Remaining']
-                        profit+=(ppitem * r['ordered_Remaining'])
-                if total != 0:
-                    raise MyError ("didn't have enough in inventory for sale")
-                    #break
+        if inv>total:
+            while (total !=0): #while all items sold have not yet been processed and there is enough inventory to process them
+                #get order_items records with the same item_ID number
+                rec = get_from_order_items(record['item_ID'], 'all for cost')
+                if (rec is not None):
+                    if len(rec)>0:
+                        for r in rec:
+                            #keys are 'order_ID','item_ID','ordered_Total','ordered_Cost','ordered_Memo','ordered_Remaining'
+                            columns=r.keys()
+                            for column in columns:
+                                print(column,' : ',r[column])
+                            print(" ")
+                            if (r is not None) & (r['ordered_Remaining'] >= total): #enough in remaining to cover total
 
-        #sql = ('UPDATE event_sales SET sales_Tax=? AND sales_Proft=? WHERE event_ID=? AND item_ID=?')
-        #c.execute(sql,values)
-        #c.row_factory=sqlite3.Row
+                                if record['sales_Total'] == total:
+                                    #first record looked at, and there was enough inventory
+                                    # for this order to cover items sold so no combined profit calculation with different costs
+                                    ppitem=record['sales_Price'] - r['ordered_Cost']
+                                    profit = (ppitem * record['sales_Total'])  - tax
+                                    rem = r['ordered_Remaining'] - record['sales_Total']
+                                    li = ['remainder', r['order_ID'], r['item_ID'], rem]
+                                    update_order_items(li)  # change Remaining to reflect sale (this sort of works)
+                                    #db.commit() #the update function commit's the changes, why commit here too?
+                                    li2 = (float(tax),float(profit),int(record['event_ID']),int(record['item_ID']),)
+                                    try:
+                                        sql5='UPDATE event_sales ' \
+                                            'SET sales_Tax=?, sales_Profit=? ' \
+                                            'WHERE event_ID=? AND item_ID=?'
+                                        c.execute(sql5,(li2))#tax, profit, record['event_ID'],record['item_ID'],))
+                                        db.commit()
+                                        total=0
+                                        break
+                                    except sqlite3.Error:
+                                        traceback.print_exc()
+                                        raise MyError('Fuck you stupid program')
+                                elif (record['sales_Total'])>total:
+                                    #2nd record examined, and between the two there was enough inventory
+                                    #calculate combined profit
+                                    ppitem = record['sales_Price'] - r['ordered_Cost']
+                                    profit = (ppitem * total) - tax
+                                    rem = r['ordered_Remaining'] - total
+                                    li = ['remainder', r['order_ID'], r['item_ID'], rem]
+                                    try:
+                                        update_order_items(li)  # change Remaining to reflect sale (this sort of works)
+                                        db.commit()
+                                        li2 = [tax, profit, record['event_ID'], record['item_ID']]
+                                        c.execute('UPDATE event_sales '
+                                                  'SET sales_Tax=?, sales_Profit=? '
+                                                  'WHERE event_ID=? AND item_ID=?',(li2))
+                                                  #(tax, profit, record['event_ID'], record['item_ID'],))
+                                        db.commit()
+                                        total = 0
+                                    except sqlite3.Error:
+                                        traceback.print_exc()
+                                        raise MyError ('Something went wrong while updating')
 
-    #raise MyError('Got to the end of the function')
+                            elif (r is not None) & (r['ordered_Remaining']<total):
+                                ppitem = record['sales_Price'] - r['ordered_Cost']
+                                total -=r['ordered_Remaining']
+                                profit+=(ppitem * r['ordered_Remaining'])
+                    elif total != 0:
+                        raise MyError ("didn't have enough in inventory for sale")
+                elif total !=0:
+                    raise MyError('Got no results for this')
     #TODO make list of records and pass to subfunction to avoid calling database twice for same query
-
-    #for record in records:
-
-    #    tax_and_profit_for_event_sales(record)
 
 def create_event_sales_table():
     """Create event_sales table"""
@@ -491,13 +372,16 @@ def create_event_sales_table():
                           'VALUES (?,?,?,?,?,?)', sales)
             db.commit()  # save changes
 
-        #auto_update_event_sales()
+        auto_update_event_sales()
 
 
     except sqlite3.Error as e:
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
+def reInitialize_database():
+    delete_table(1)
+    create_tables()
 
 
 
@@ -630,28 +514,13 @@ def create_order_items_table():
 #             if record['ordered_Remaining']
 
 def get_from_order_items(item_ID, value, * o_ID):
-    '''get record or column value by order ID and item ID value'''
-    # sql3='SELECT * FROM order_items WHERE order_ID=? AND item_ID=?'
-    # c.execute(sql3, (o_ID, item_ID,))
-    #
-    # r=c.fetchone()
-    # if value=='all':
-    #     return r
-    # if value=='order':
-    #     return r[0]
-    # elif value=='total':
-    #     return r[1]
-    # elif value=='cost':
-    #     return r[2]
-    # elif value=='remaining':
-    #     return r[3]
 
     sql= 'SELECT * FROM order_items '
     sql2='WHERE item_ID=? '
     sql3='AND order_ID=? '
 
     if value=='all for cost':
-
+        sql='SELECT order_items.order_ID, order_items.item_ID, ordered_Total,ordered_Cost, ordered_Remaining, order_Received FROM order_items '
         sql=sql+'INNER JOIN orders ON orders.order_ID=order_items.item_ID '+sql2+'AND ordered_Remaining >0 ORDER BY order_Received ASC'
         values=(item_ID,)
         rec=c.execute(sql,values)
@@ -661,6 +530,19 @@ def get_from_order_items(item_ID, value, * o_ID):
             #print(r)
             li.append(r)
         return li
+    #elif value=='all inv':
+    #    sql='SELECT item_ID, SUM(ordered_Remaining)' \
+    #        'FROM order_items' \
+    #        'WHERE item_ID=?' \
+    #        'GROUP ON item_ID'
+    #    values = (item_ID,)
+    #    rec = c.execute(sql, values)
+    #    c.row_factory = sqlite3.Row
+    #    li = []
+    #    for r in rec:
+    #        # print(r)
+    #        li.append(r)
+    #    return li
     else:
         order_ID=o_ID[0] #optional parameters are in tuples (I don't know why....)
         sql = sql + sql2 + sql3
@@ -714,31 +596,31 @@ def update_order_items(values): #choice, order_ID, item_ID, value, *total
     elif values[0]=='remainder':
         sql = 'UPDATE order_items SET ordered_Remaining = ? WHERE order_ID=? AND item_ID=?'
         c.execute(sql, (values[3], values[1], values[2],))
-    elif values[0]=='remaining': #choice, item_ID, total
-        total=values[3]
-        while True:
-            sql = 'SELECT order_items.order_ID, ordered_Total, ordered_Cost, ordered_Remaining, orders.order_Received' \
-                  'FROM order_items' \
-                  'INNER JOIN orders ON orders.order_ID=order_items.order_ID' \
-                  'WHERE item_ID=? AND ordered_Remaining > 0' \
-                  'ORDER BY orders.Received DESC'
-            c.execute(sql, (values[2],))  # Might need comma after item_ID
-            # previously had while loop and test for order_Remaining being larger than 0
-            r = c.fetchone()
-            order_ID = r[0]
-            rem = r[3]
-            left=rem-total
-            if left<0:
-                # calculate difference, set this id to 0 and then look for next record in get_from_order_items
-                sql='UPDATE order_items SET ordered_Remaining = 0 WHERE order_ID=? AND item_ID=?'
-                c.execute(sql,(order_ID,values[2]))
-                total=left
-
-            elif left >= 0:
-
-                # Update order_items SET ordered_Rem.. = ? WHERE order_ID=? AND item_ID=? (remain,order_ID,values[2])
-                sql2 = 'UPDATE order_items SET orderd_Remaining =? WHERE order_ID=? AND item_ID=?'
-                c.execute(sql2, (left, order_ID, values[2]))
+    # elif values[0]=='remaining': #choice, item_ID, total
+    #     total=values[3]
+    #     while True:
+    #         sql = 'SELECT order_items.order_ID, ordered_Total, ordered_Cost, ordered_Remaining, orders.order_Received' \
+    #               'FROM order_items' \
+    #               'INNER JOIN orders ON orders.order_ID=order_items.order_ID' \
+    #               'WHERE item_ID=? AND ordered_Remaining > 0' \
+    #               'ORDER BY orders.Received DESC'
+    #         c.execute(sql, (values[2],))  # Might need comma after item_ID
+    #         # previously had while loop and test for order_Remaining being larger than 0
+    #         r = c.fetchone()
+    #         order_ID = r[0]
+    #         rem = r[3]
+    #         left=rem-total
+    #         if left<0:
+    #             # calculate difference, set this id to 0 and then look for next record in get_from_order_items
+    #             sql='UPDATE order_items SET ordered_Remaining = 0 WHERE order_ID=? AND item_ID=?'
+    #             c.execute(sql,(order_ID,values[2]))
+    #             total=left
+    #
+    #         elif left >= 0:
+    #
+    #             # Update order_items SET ordered_Rem.. = ? WHERE order_ID=? AND item_ID=? (remain,order_ID,values[2])
+    #             sql2 = 'UPDATE order_items SET orderd_Remaining =? WHERE order_ID=? AND item_ID=?'
+    #             c.execute(sql2, (left, order_ID, values[2]))
 
 def receive_Order(items):
     '''Add list of items from an order to database'''
@@ -1283,14 +1165,20 @@ def view_table(name):
         raise MyError('Something went wrong when trying to display the table',traceback.print_exc())
 
 
-def delete_table():
+def delete_table(*table):
     """Used to delete a table.  Only intended for debugging use."""
     '''Have not made and will not make unit test for this.  It is only used for debugging and I don't want to write a 
        function to feed it the name of the table to delete.'''
     try:
-        name= ui.get_table_input()
-        c.execute('DROP TABLE IF EXISTS '+name) #Delete table
-        db.commit() #save changes
+        if table is None:
+            name= ui.get_table_input()
+            c.execute('DROP TABLE IF EXISTS '+name) #Delete table
+            db.commit() #save changes
+        else:
+            tables=('items','events','orders','order_items','event_sales')
+            for table in tables:
+                c.execute('DROP TABLE IF EXISTS '+table)
+                db.commit()
 
     except sqlite3.Error as e:
         ui.show_message('An error occurred.  Changes will be rolled back.')
@@ -1427,9 +1315,10 @@ def create_tables():
     create_items_table()
     create_organization_table()
     create_orders_table()
-    create_event_sales_table()
     create_events_table()
     create_order_items_table()
+    create_event_sales_table()
+
 
 
 

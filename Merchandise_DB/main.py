@@ -38,19 +38,19 @@ def use_choice(choice):
 
 def main():
     choice=None
-    #for i in range(5):
-    #    database.delete_table()
-    database.delete_table()
+    #database.delete_table()
+    #database.delete_table(1)
+    database.reInitialize_database() #go back to default values
     database.set_globals()
 
+    #database.create_organization_table()
+    #database.create_orders_table()
+    #database.create_items_table()
+    #database.create_events_table()
+    #database.create_event_sales_table()
+    #database.create_order_items_table()
 
-    database.create_items_table()
-    database.create_events_table()
-    database.create_event_sales_table()
-    database.create_orders_table()
-    database.create_order_items_table()
-    database.create_organization_table()
-    database.auto_update_event_sales()
+    #database.auto_update_event_sales()
 
     while choice !='7':
         choice= ui.display_menu()
