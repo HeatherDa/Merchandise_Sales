@@ -15,7 +15,7 @@ def use_choice(choice):
         return 2
 
     elif choice==3:
-        add_record()
+        databaseTools.add_record()
         return 3
 
     elif choice==4:
@@ -39,23 +39,16 @@ def use_choice(choice):
 def main():
     choice=None
     #database.delete_table()
-    #database.delete_table(1)
+    #database.create_tables()
     database.reInitialize_database() #go back to default values
+    database.auto_update_inventory()
     database.set_globals()
-
-    #database.create_organization_table()
-    #database.create_orders_table()
-    #database.create_items_table()
-    #database.create_events_table()
-    #database.create_event_sales_table()
-    #database.create_order_items_table()
-
-    #database.auto_update_event_sales()
 
     while choice !='7':
         choice= ui.display_menu()
         use_choice(choice)
-    sys.exit()
+    database.close_database()
+    ui.show_message("Goodbye!")
 
 def view_table():
     pass
@@ -81,57 +74,22 @@ def delete_record():
 
 def search():
     choice = ui.get_search_menu_input()
-    if choice == '0':
+    if choice == 0:
         return
-    elif choice == '1':
+    elif choice == 1:
         queries.search_by_id_ui()
-    elif choice == '2':
+    elif choice == 2:
         queries.search_by_type_ui()
-    elif choice == '3':
+    elif choice == 3:
         queries.search_by_date_ui() #use original choice 3 code to display results, use ui to get date input from user
-    elif choice == '4':
+    elif choice == 4:
         queries.search_by_on_hand_ui()
-    elif choice == '5':
+    elif choice == 5:
         queries.search_by_salesTax_due_ui()
-    elif choice == '6':
+    elif choice == 6:
         queries.search_by_profit_ui()
-    elif choice == '7':
+    elif choice == 7:
         queries.search_by_event_ui()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 main()

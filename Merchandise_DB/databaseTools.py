@@ -176,13 +176,15 @@ def update_event_sales_ui(): #TODO must write function to undo changes to invent
             if choice == '1':
                 ui.show_message("Previous number of item sold: " + str(database.get_from_event_sales(e_ID, i_ID, 'total')))
                 updateData = ui.get_numeric_input("Enter the total number of this item sold at the event: ", 'i')
-                database.update_event_sales(choice, e_ID, i_ID, updateData)
+                v=[choice, e_ID, i_ID, updateData]
+                database.update_event_sales(v)
                 ui.show_message("Updated number of item sold: "+str(database.get_from_event_sales(e_ID, i_ID, 'total')))
                 return
             elif choice == '2':
                 ui.show_message("Previous sales price: " + str(database.get_from_event_sales(e_ID, i_ID, 'price')))
                 updateData = ui.get_numeric_input("Enter the new sale price: ", 'f')
-                database.update_event_sales(choice, e_ID, i_ID, updateData)
+                v=[choice, e_ID, i_ID, updateData]
+                database.update_event_sales(v)
                 ui.show_message("Updated sales price: " + str(database.get_from_event_sales(e_ID, i_ID, 'price')))
                 return
         else:
@@ -221,7 +223,7 @@ def update_order_item_ui():
     while True:
         choice=ui.get_numeric_input('1. Update Total Ordered\n2. Update Ordered Cost\n3. Update Order Memo\n'
                                 '4. Update Remaining Inventory\n5. Cancel\n\nEnter selection: ','i')
-        if (choice >0) & (choice<6):
+        if (choice <0) & (choice>6):
             break
     if choice == 5:
         return
@@ -255,6 +257,9 @@ def update_order_item_ui():
             return
         else:
             ui.show_message('Not a valid choice')
+
+
+
 
 def add_record(*table):
 
@@ -303,37 +308,37 @@ def add_record(*table):
         date=ui.get_date_input('Enter the date and time this order was placed: ')
         database.new_Order(vendor,date)
     elif table =='order_items':
-        while True:
-            done = False
-            while done == False:
-                choice = ui.get_numeric_input('1. New item\n2. Reorder of previous item\n3. Exit', 'i')
-                if choice == 3:
-                    break
-                if choice == 1:
-                    add_record('items')
+        receive_order_ui()
 
-                else:
-                    while True:
-                        o_ID = ui.get_numeric_input("Enter the order ID: ", 'i')
-                        i_ID = ui.get_numeric_input("Enter the item ID: ", 'i')
-                        if database.is_ID('order_items', o_ID, i_ID):  # if this entry already exists in the table don't make a new one
-                            ui.show_message("This record already exists in the table.  To change it, update the table.")
-                            return
-                        elif ((database.is_ID('events', o_ID)) & (database.is_ID('items', i_ID))):
-                            if choice == 2:
-                                order = ui.get_numeric_input('Enter the order id for this order: ', 'i')
-                                item_ID = ui.get_numeric_input('Enter the item id for this item: ', 'i')
-                                date = ui.get_date_input('Enter the date the order was received')
-                                total = ui.get_numeric_input('Enter the total number of items purchase: ', 'i')
-                                cost = ui.get_numeric_input('Enter the cost of each item: ', 'f')
-                                note = ui.get_input('Enter any notes about this purchase, such as discount amount: ')
-                                item = [order, item_ID, date, total, cost, note]
-                                database.receive_Order(item)
+def receive_order_ui():
+    choice=0
+    while choice !=3:
+        choice = ui.get_numeric_input('1. New item\n2. Reorder of previous item\n3. Exit', 'i')
+        if choice ==1:
+            add_record('items')
+        else:
+            o_ID = ui.get_numeric_input("Enter the order ID: ", 'i')
+            i_ID = ui.get_numeric_input("Enter the item ID: ", 'i')
+            if database.is_ID('order_items', o_ID, i_ID):  # this primary key already exists, don't repeat
+                ui.show_message("This record already exists in the table.  To change it, update the table.")
 
-                        elif choice == 3:
-                            break
-                        else:
-                            ui.show_message('got past actual code in add records order_items') #TODO: would you ever get here?
+            elif ((database.is_ID('events', o_ID)) & (database.is_ID('items', i_ID))):
+                order = ui.get_numeric_input('Enter the order id for this order: ', 'i')
+                item_ID = ui.get_numeric_input('Enter the item id for this item: ', 'i')
+                date = ui.get_date_input('Enter the date the order was received')
+                total = ui.get_numeric_input('Enter the total number of items purchase: ', 'i')
+                cost = ui.get_numeric_input('Enter the cost of each item: ', 'f')
+                note = ui.get_input('Enter any notes about this purchase, such as discount amount: ')
+                item = [order, item_ID, total, cost, note, total, date,]
+                database.receive_Order(item)
+
+            else:
+                if database.is_ID ('orders',o_ID):
+                    ui.show_message('Item id may be incorrect')
+                elif database.is_ID('items', i_ID):
+                    ui.show_message('Orders id may be incorrect')
+
+
 
 def settings_ui():
     choice=ui.get_numeric_input('1. Change state and saleTax percentage\n2. Exit\n\nEnter your selection: ','i')

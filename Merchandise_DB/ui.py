@@ -3,7 +3,7 @@
 def display_menu():
     '''Show Main Menu'''
     option=get_numeric_input("\n1. Display table\n2. Update Record\n3. Add New Record\n4. Delete Record\n5. Search\n6. Change Settings\n7. Quit\nEnter selection: ",'i')
-    print("")
+    show_message("")
     if (option >0) & (option <8):
         return option
     else:
@@ -15,14 +15,16 @@ def show_message(message):
 
 def get_numeric_input(message, t):
     '''Get numeric input back in numeric format as either int or float'''
+
     while True:
         n=input(message)
+
         if (is_int(n)) & (t== 'i') :
             return int(n)
         elif (is_Float(n)) & (t== 'f'):
             return float(n)
         else:
-            print("Entry is not a valid integer or decimal.")
+            show_message("Entry is not a valid integer or decimal.")
 
 
 def get_input(message):
@@ -54,7 +56,7 @@ def get_type_input(types):
         count=count+1
     message=message+"Enter 0 to add a new type\n"
     while True: #Accept only valid input
-        print(message)
+        show_message(message)
         choice = input("Enter your selection: ")
         if (is_int(choice)):
             if  choice=='0': #if user wants to add a new type
@@ -87,10 +89,13 @@ def get_table_input():
             show_message('input should be a number from 1-5')
 
 def get_search_menu_input():
+
     while True:
-        choice=get_numeric_input("1. Get Record by ID \n2. Get Record by Type \n3. Get Events sorted by Date \n"
-                     "4. Get items by quantity in inventory \n5. Get Total Sales Tax Owed for a given year \n"
-                     "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\nEnter your selection: ",'i')
+        message="1. Get Record by ID \n2. Get Record by Type \n3. Get Events sorted by Date \n" \
+                "4. Get items by quantity in inventory \n5. Get Total Sales Tax Owed for a given year \n" \
+                "6. Get list of items by profit \n7. Get items sold by event_ID\n8. Exit to main menu\n\n" \
+                "Enter your selection: "
+        choice=get_numeric_input(message,'i')
         if (choice > 0) & (choice <9):
             return choice
         else:
@@ -154,15 +159,34 @@ def get_phone_input(message):
 
 def items_header():
     show_message("\033[1m"+"Items Table"+"\033[0m")
-    show_message("\033[1m"+"\033[4m"+"Item ID: \tType: \t\tDescription: \t\t\t\t\tTax status: "+"\033[0m")
+    show_message("\033[1m"+"\033[4m"
+                 +add_spaces("Item ID:", 'item_ID')
+                 +add_spaces("Type:", 'item_Type')
+                 +add_spaces("Description:", 'item_Description')
+                 +add_spaces("Tax status:", 'item_Taxable')
+                 +"\033[0m")
 
 def events_header():
     show_message("\033[1m" + "Events Table" + "\033[0m")
-    show_message("\033[1m"+"\033[4m"+"Event ID: \tType: \t\tDate: \t\t\t\t\tAddress: \t\t\t\t\t\t\t\t\tContact: \t\t\t\t\tContact Phone: "+"\033[0m")
+    show_message("\033[1m"+"\033[4m"
+                 +add_spaces("Event ID:",'event_ID')
+                 +add_spaces("Type:", 'event_Type')
+                 +add_spaces("Date:", 'event_Date')
+                 +add_spaces("Address:", 'address')
+                 +add_spaces("Contact:", 'event_Contact')
+                 +add_spaces("Contact Phone:", 'event_Phone')
+                 +"\033[0m")
 
 def event_sales_header():
     show_message("\033[1m" + "Event Sales Table" + "\033[0m")
-    show_message("\033[1m"+"\033[4m"+"Event ID: \tItem ID: \tTotal Sold: \tSale Price: \tSale Tax: \t\tProfit per item for event: "+"\033[0m")
+    show_message("\033[1m"+"\033[4m"
+                 +add_spaces("Event ID:", 'event_ID')
+                 +add_spaces("Item ID:", 'item_ID')
+                 +add_spaces("Total Sold:", 'sales_Total')
+                 +add_spaces("Sale Price:", 'sales_Price')
+                 +add_spaces("Sale Tax:", 'sales_Tax')
+                 +add_spaces("Profit:", 'sales_Profit')
+                 +"\033[0m")
 
 def inventory_header():
     show_message("\033[1m" + "Inventory Table" + "\033[0m")
@@ -170,11 +194,23 @@ def inventory_header():
 
 def orders_header():
     show_message("\033[1m" + "Orders Table" + "\033[0m")
-    show_message("\033[1m"+"\033[4m"+"Order ID: \tVendor ID: \tDate Ordered: \t\tDate Received:  "+"\033[0m")
+    show_message("\033[1m"+"\033[4m"
+                 +add_spaces("Order ID:", 'order_ID')
+                 +add_spaces("Vendor ID:", 'vendor_ID')
+                 +add_spaces("Date Ordered:", 'ordered_Date')
+                 +add_spaces("Date Received:", 'ordered_Received')
+                 +"\033[0m")
 
 def order_items_header():
     show_message("\033[1m" + "Item Orders Table" + "\033[0m")
-    show_message("\033[1m"+"\033[4m"+"Order ID: \tItem ID: \tTotal Ordered: \tCost: \t\t\tOrder Memo: \t\t\t\t\t\tRemaining inventory: "+"\033[0m")
+    show_message("\033[1m"+"\033[4m"
+                 +add_spaces("Order ID:", 'order_ID')
+                 +add_spaces("Item ID:", 'item_ID')
+                 +add_spaces("Total Ordered:", 'ordered_Total')
+                 +add_spaces("Cost per Item:", 'ordered_Cost')
+                 +add_spaces("Order Memo:", 'ordered_Memo')
+                 +add_spaces("Remaining inventory:", 'ordered_Remaining')
+                 +"\033[0m")
 
 def profits_header():
     show_message("\033[1m" + "Profits Query Results" + "\033[0m")
@@ -197,57 +233,52 @@ def is_int(n):
         return False
 
 def add_spaces(st, col):
-    d=0
-    if (col=='ordered_Memo'):
+    if col=='address':
+        length = len(st)
+        d = 40 - length
+        st = st + (d * " ") + " \t"
+        return st
+    elif col in ('ordered_Memo', 'item_Description'):
         length = len(st)
         d = 35 - length
-        st = st + (d * " ") + "\t" #if I take this and the following line out, it tells me the d variable is not used. WHY?
+        st = st + (
+        d * " ") + "\t"
         return st
-    if (col =='item_Description') | (col=='iTotal'):
-        length=len(st)
-        d=30-length
-    elif (col=='address') :
-        length=len(st)
-        d=40-length
     elif (col=='event_Contact') :
         length=len(st)
         d=25-length
-    elif (col=='sales_Price') | (col=='sales_Total') | (col=='sold') | (col=='ordered_Total') | (col=='sales_Profit') | (col=='sales_Tax'):
-        length=len(st)
-        d=10-length
-        fl = float(st)
-        s = "%.2f" % fl
-        st = s + (d * " ") + " \t"
+        st = st + (d * " ") + " \t"
         return st
-
-    #elif  :
-    #    length = len(str(st))
-    #    d = 13 - length
-    #    fl=float(st)
-    #    s="%.2f" %fl
-    #    st = s + (d * " ") + " \t"
-    #    return st
-    elif (col=='ordered_Cost') | (col=='profit'):
-        length = len(str(st))
-        d = 10 - length
-        fl = float(st)
-        s = "%.2f" % fl
-        st = s + (d * " ") + " \t"
-        return st
-    elif (col=='item_Total_Ordered'):
-        length = len(st)
-        d = 10 - length
-    elif (col=='iOrdered'):
-        length = len(st)
-        d = 16 - length
-    elif (col=='event_Date')|(col=='ordered_Date'):
+    elif col in ('event_Date','ordered_Date','order_Date','order_Received'):
         length=len(st)
         d = 20 - length
+        st = st + (d * " ") + " \t"
+        return st
+
+    elif col in ('item_Ordered','item_Total','sales_Total','ordered_Total'):
+        length = len(st)
+        d = 12 - length
+        st = st + (d * " ") + " \t"
+        return st
+    elif col in['sales_Price','sales_Tax','ordered_Cost','sales_Profit']:
+        if is_Float(st):
+            length=len(st)
+            d=16-length
+            fl = float(st)
+            s = "%.2f" % fl
+            st = s + (d * " ") + " \t"
+            return st
+        else:
+            length=len(st)
+            d=16-length
+            st = st + (d*" ") + " \t"
+            return st
+
     else:
         length=len(st)
         d=10-length
-    st = st + (d * " ") + "\t"
-    return st
+        st = st + (d * " ") + "\t"
+        return st
 
 def item_record_format(record):
     '''get record, display row'''
