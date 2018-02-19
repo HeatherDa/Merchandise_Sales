@@ -92,15 +92,16 @@ def avg_profit_ui():
             m = str(i[0]) + ' \t\t ' + str(i[1])
             ui.show_message(m)
 
+
 def search_by_type_ui():
     table = ui.get_type_table_input()
     if table == 0:
         return
     else:
-        types=database.get_types(table)
-        ty=ui.get_type_input(types)
-        v=(table, ty)
-        records=database.search_by_type(v)
+        types = database.get_types(table)
+        ty = ui.get_type_input(types)
+        v = (table, ty)
+        records = database.search_by_type(v)
 
         if table == 'items':
             ui.items_header()
@@ -116,7 +117,7 @@ def search_by_date_ui():
     choice = ui.get_numeric_input(
         '1. Search for event by date\n'
         '2. Display events table in order by date, from today forward.\n\n'
-        'Enter selection: ','i')
+        'Enter selection: ', 'i')
     if choice == 1:
         day = ui.get_date_input('Enter the event date you are looking for')
         records = database.search_by_date(choice, day)
@@ -134,7 +135,5 @@ def search_by_on_hand_ui():
     pass
 
 
-def search_by_salesTax_due():
+def search_by_sales_tax_due():
     pass
-
-

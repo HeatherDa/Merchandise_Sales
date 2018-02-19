@@ -126,9 +126,9 @@ def create_events_table():
                    'Candice Jennings', '612-287-6830'),
                   ('Signing', '2018-02-07 15:00:00', '151 Afton Ave.', 'Milwakee', 'WI', '52964',
                    'Alice Milton', '952-600-8700'),
-                  ('Concert', '2018-02-12 19:30:00', '523 Bolton Rd.', 'Fargo', 'ND', '59721',
+                  ('Concert', '2018-03-12 19:30:00', '523 Bolton Rd.', 'Fargo', 'ND', '59721',
                    'John Cobbler', '542-890-7231'),
-                  ('Signing', '2018-03-15 14:30:00', '3030 Colton Way', 'New Olm', 'MN', '57382',
+                  ('Signing', '2018-04-15 14:30:00', '3030 Colton Way', 'New Olm', 'MN', '57382',
                    'Kaiser Tannenburg', '472-113-9157')]
 
         if len(rec) < 1:  # If table is empty, add data
@@ -579,9 +579,7 @@ def search_by_type(v): #v=[table, type]
     ty = v[1]
     typeName = table[:-1] + '_Type'
     sql = 'SELECT * FROM ' + table + ' WHERE ' + typeName + ' = ? ORDER BY ' + typeName
-    print(sql)
-    print(ty)
-    records = c.execute(sql, (ty,))
+    records = c.execute(sql, (ty, ))
     c.row_factory = sqlite3.Row
     r = []
     for rec in records:
@@ -590,7 +588,7 @@ def search_by_type(v): #v=[table, type]
 
 
 def avg_profit(values):
-    '''values=[choice, ch, *d1, *d2]'''
+    """takes values=[choice, ch, *d1, *d2] and returns list of rows that are above or below average"""
     sql = 'SELECT * ' \
           'FROM event_sales '
     count = 0
