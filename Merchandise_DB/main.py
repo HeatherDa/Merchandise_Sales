@@ -86,7 +86,7 @@ def search():
         queries.search_by_on_hand_ui()
     elif choice == 5:
         queries.search_by_salesTax_due_ui()
-    elif choice == 6:
+    elif choice == 6:#TODO make new menu with sub options
         queries.search_by_profit_ui()
     elif choice == 7:
         queries.search_by_event_ui()
