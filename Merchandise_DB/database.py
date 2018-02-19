@@ -832,7 +832,7 @@ def is_taxable(e_id, i_id):
 def view_table(name):
     """Return all records from a given table"""
     try:
-        sql = 'SELECT * FROM '+name
+        sql = 'SELECT * FROM '+ name
         records = c.execute(sql)
         c.row_factory = sqlite3.Row  # so that you can access columns by name
         r = []
@@ -843,6 +843,14 @@ def view_table(name):
     except sqlite3.Error:
         raise MyError('Something went wrong when trying to display the table',traceback.print_exc())
 
+
+def search_by_event(event):
+    sql = 'SELECT * FROM event_sales WHERE event_ID = ?'
+    records = c.execute(sql, (event, ))
+    r = []
+    for rec in records:
+        r.append(rec)
+    return r
 
 def is_ID(table, id1 , *id2):
     """Searches given table for incidence of given id.  returns True if found, otherwise False."""

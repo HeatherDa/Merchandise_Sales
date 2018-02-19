@@ -131,6 +131,22 @@ def search_by_date_ui():
             ui.event_record_format(r)
 
 
+def search_by_event_ui():
+    """return all event_sales items sold at a given event"""
+    while True:
+        event=ui.get_numeric_input('Enter the event ID for searching or type 0 to exit', 'i')
+        if event == 0:
+            return
+        elif database.is_ID('events', event):
+            records = database.search_by_event(event)
+            ui.event_sales_header()
+            for rec in records:
+                ui.event_sales_record_format(rec)
+            return
+        else:
+            ui.show_message('No records found for that ID.')
+
+
 def search_by_on_hand_ui():
     pass
 
