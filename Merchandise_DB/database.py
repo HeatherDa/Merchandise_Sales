@@ -7,6 +7,7 @@ from Merchandise_DB import ui
 db = sqlite3.connect('merchandising_db.db') #Creates db file or opens if it already exists
 c = db.cursor()
 
+
 def get_settings(v):
     record = c.execute('SELECT * FROM organizations')
     c.row_factory = sqlite3.Row
@@ -15,7 +16,7 @@ def get_settings(v):
 
 
 def create_items_table():
-    #Create items table
+    """Create items table"""
     try:
         c.execute('CREATE TABLE if not exists items (item_ID integer primary key, item_Type text not null, '
                   'item_Description text not null, item_Taxable int)')
@@ -39,24 +40,13 @@ def create_items_table():
 
 def new_item(type,description,taxable,*v): #v is 1 if expecting item_ID returned, else no return expected
     """Add new item to items table"""
-    # if there's a new item, there's a new order_items record too
     try:
-        '''
-        item_types = get_types('items')
-        item = ui.get_type_input(item_types)
-        description = ui.get_input("Please describe the item. (Example: 'white, blue logo' for a T-Shirt, or the title "
-                                 "for a CD or Poster.): ")
-        total_ordered = ui.get_numeric_input("How many items were ordered?", 'i')
-        cost_per_item = ui.get_numeric_input("How much does each item cost?", 'f')
-        taxable = ui.get_numeric_input("Enter 1 if this item is subject to sales tax, 0 if not: ", 'i')
-        '''
         if taxable != 1:
             taxable = 0
 
         sql = 'INSERT INTO items (item_Type, item_Description, item_Taxable) VALUES(?,?,?)'
         c.execute(sql, (type, description, taxable))
 
-        #c.execute(sql3, (orderID,item_ID,total_ordered, cost_per_item, orderNote, total_ordered))
         db.commit()  #save changes
         c.execute('SELECT last_insert_rowid()')
         a = c.fetchone()
@@ -282,7 +272,7 @@ def reInitialize_database():
     delete_table(1)
     create_tables()
 
-def new_event_sales(values):
+def new_event_sales(values): #TODO Fix ME
     """Takes tupple with event_ID, item_ID, sales_Total, sales_Price and adds record to event_sales table if enough
     inventory exists to cover sales_Total"""
     try:
@@ -391,6 +381,7 @@ def create_order_items_table():
         traceback.print_exc()
 
 
+# noinspection PyPep8Naming
 def get_from_order_items(order_ID, item_ID, value):
     sql = 'SELECT * FROM order_items WHERE item_ID = ? AND order_ID = ? '
     values = (item_ID, order_ID, )
@@ -447,8 +438,8 @@ def create_orders_table():
         orders = [('1', '2018-01-01 10:30:00', '2018-01-10 14:00:00'),
                   ('2', '2018-01-01 11:00:00', '2018-01-15 9:00:00'),
                   ('3', '2018-01-05 23:15:00', '2018-01-15 9:00:00')]
-        openOrder=('1', '2018-02-01 12:30:00')
-        if len(rec) <1:
+        openOrder = ('1', '2018-02-01 12:30:00')
+        if len(rec) < 1:
             c.executemany('INSERT INTO orders (vendor_ID, order_Date, order_Received) VALUES (?, ?, ?)', orders)
             db.commit()
             c.execute('INSERT INTO orders (vendor_ID, order_Date) VALUES (?, ?)', openOrder)
@@ -462,6 +453,7 @@ def new_Order(vendor, ordered):
     c.execute(sql, (vendor, ordered, ))
     db.commit()
 
+
 def update_order(choice, order_ID, value):
     if choice == 'received':
         sql = 'UPDATE orders SET order_Received=? WHERE order_ID=?'
@@ -471,6 +463,7 @@ def update_order(choice, order_ID, value):
         sql = 'UPDATE orders SET order_Date = ? WHERE order_ID = ?'
         c.execute(sql, (value, order_ID))
         db.commit()
+
 
 def get_from_orders(order_ID, value):
     sql = 'SELECT * FROM orders WHERE order_ID = ?'
@@ -511,126 +504,90 @@ def drop_settings():
     db.commit()
 
 
-#TODO: fix me!
-def delete_Record():
+def delete_record(values): #values [table name, id1, id2]
     """Delete a record from the database by ID"""
+    t = values[0]
+    id1 = values[1]
     try:
-        ui.show_message("Which table contains the record you want to delete?")
-        t = ui.get_table_input()
         if t == 'items':
-            id = ui.get_numeric_input("What is the ID of the record you wish to delete?", 'i')
-            results = c.execute('SELECT * FROM event_sales')
+            sql = 'SELECT DISTINCT item_ID FROM event_sales WHERE item_ID = ?'
+            sql2 = 'SELECT DISTINCT item_ID FROM order_items WHERE item_ID = ?'
+            results1 = c.execute(sql, (id1, ))
+            results2 = c.execute(sql2, (id1, ))
             c.row_factory = sqlite3.Row
             count = 0
-            for result in results:
-                if result['item_ID'] == id:
-                   count = count + 1
+            for result in results1:
+                count += 1
+            for result in results2:
+                count += 1
             if count > 0:
-                ui.show_message('Cannot delete that record, as it is in use in another table.')
+                return 'Cannot delete that record, as it is in use in another table.'
             else:
                 sql = '''DELETE FROM items WHERE item_ID = ?'''
-                c.execute(sql, (id, ))
+                c.execute(sql, (id1, ))
                 db.commit()
-                ui.show_message("Record Deleted")
+                return "Record Deleted"
         elif t == 'events':
-            id = ui.get_numeric_input("What is the ID of the record you wish to delete?", 'i')
-            results = c.execute('SELECT * FROM event_sales')
+            results = c.execute('SELECT DISTINCT event_ID * FROM event_sales WHERE event_ID = ?', (id1, ))
             c.row_factory = sqlite3.Row
             count = 0
             for result in results:
-                if result['event_ID'] == id:
-                    count = count + 1
+                count = count + 1
             if count > 0:
-                ui.show_message('Cannot delete that record, as it is in use in another table.')
+                return 'Cannot delete that record, as it is in use in another table.'
             else:
                 sql = '''DELETE FROM events WHERE event_ID = ?'''
-                c.execute(sql, (id, ))
+                c.execute(sql, (id1, ))
                 db.commit()
-                ui.show_message("Record Deleted")
+                return "Record Deleted"
+        elif t == 'orders':
+            results = c.execute('SELECT DISTINCT order_ID * FROM order_items WHERE order_ID = ?', (id1, ))
+            count = 0
+            for result in results:
+                count +=1
+            if count > 0:
+                return 'Cannot delete that record, as it is in use in another table.'
+            else:
+                sql = 'DELETE FROM orders WHERE order_ID = ?'
+                c.execute(sql, (id1, ))
+                db.commit()
+                return 'Record Deleted'
         elif t == 'event_sales':
-            e_id = ui.get_numeric_input("What is the event ID of the record you wish to delete?", 'i')
-            m_id = ui.get_numeric_input("What is the item ID of the record you wish to delete?", 'i')
-
-            sql = '''DELETE FROM event_sales WHERE event_ID = ? AND item_ID = ?'''
-            c.execute(sql, (e_id, m_id, ))
-            db.commit()
-            ui.show_message("Record Deleted")
+            if is_ID('event_sales', id1, values[2]):
+                sql = '''DELETE FROM event_sales WHERE event_ID = ? AND item_ID = ?'''
+                c.execute(sql, (id1, values[3], ))
+                db.commit()
+                return "Record Deleted"
+            else:
+                return 'That event_ID, item_ID combination was not found in the table.'
+        elif t == 'order_items':
+            if is_ID('order_items', id1, values[2]):
+                sql = 'DELETE FROM order_items WHERE order_ID = ? AND item_ID = ?'
+                c.execute(sql, (id1, values[3], ))
+                db.commit()
+                return 'Record Deleted'
+            else:
+                return 'That order_ID item_ID combination was not found in the table.'
     except sqlite3.Error:
-        ui.show_message('An error occurred.  Record could not be deleted.  Changes will be rolled back.')
-        traceback.print_exc()
         db.rollback()
+        return 'An error occurred.  Record could not be deleted.  Changes will be rolled back.', traceback.print_exc()
 
 
-def search_by_id_ui():
-    table = ui.get_table_input()
+def search_by_type(v): #v=[table, type]
+    """search items or events by type"""
+    table = v[0]
+    ty = v[1]
+    typeName = table[:-1] + '_Type'
+    sql = 'SELECT * FROM ' + table + ' WHERE ' + typeName + ' = ? ORDER BY ' + typeName
+    print(sql)
+    print(ty)
+    records = c.execute(sql, (ty,))
+    c.row_factory = sqlite3.Row
+    r = []
+    for rec in records:
+        r.append(rec)
+    return r
 
-    if table == 'items':
-        i_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
-        records = get_from_items(i_id, 'all')
-        c.row_factory = sqlite3.Row
-        ui.items_header()
-        for record in records:
-            ui.item_record_format(record)
-    elif table == 'events':
-        e_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
-        records = get_from_events(e_id,'all')
-        c.row_factory = sqlite3.Row
-        ui.events_header()
-        for record in records:
-            ui.event_record_format(record)
-    elif table == 'orders':
-        o_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
-        records = get_from_orders(o_id, 'all')
-        c.row_factory = sqlite3.Row
-        ui.orders_header()
-        for record in records:
-            ui.order_record_format(record)
-    elif table == 'event_sales':
-        e_id = ui.get_numeric_input("Enter the event id you wish to search by: ", 'i')
-        i_id = ui.get_numeric_input("Enter the items id you wish to search by: ", 'i')
-        records = get_from_event_sales(e_id, i_id, 'all')
-        c.row_factory = sqlite3.Row
-        ui.event_sales_header()
-        for record in records:
-            ui.event_sales_record_format(record)
-    elif table == 'order_items':
-        o_id = ui.get_numeric_input("Enter the order id you wish to search by: ", 'i')
-        i_id = ui.get_numeric_input("Enter the items id you wish to search by: ", 'i')
-        records = get_from_order_items(o_id, i_id, 'all')
-        c.row_factory = sqlite3.Row
-        ui.order_items_header()
-        for record in records:
-            ui.order_items_record_format(record)
-
-
-def search_by_type():
-    table = ui.get_numeric_input('1. items table\n2.events table\n\nEnter your selection: ', 'i')
-    if table == 1:
-        a = ""
-        item_types = get_types('items')
-        for i in item_types:
-            a = a + " \n" + str(item_types.index(i) + 1) + ". " + str(i)
-        ui.show_message(a)
-        t = ui.get_numeric_input("Enter the type you wish to search by: ", 'i')
-        ty = item_types[t - 1]
-        records = c.execute('SELECT * FROM items WHERE item_Type = ?', (ty,))
-        c.row_factory = sqlite3.Row
-        ui.items_header()
-        for record in records:
-            ui.item_record_format(record)
-    elif table == 2:
-        a = ""
-        event_types = get_types('events')
-        for i in event_types:
-            a = a + str(event_types.index(i) + 1) + ". " + str(i) + ' \n'
-        ui.show_message(a)
-        t = ui.get_numeric_input("Enter the type you wish to search by: ", 'i')
-        ty = event_types[t - 1]
-        records = c.execute('SELECT * FROM events WHERE event_Type = ?', (ty,))
-        c.row_factory = sqlite3.Row
-        ui.items_header()
-        for record in records:
-            ui.event_record_format(record)
 
 def avg_profit(values):
     '''values=[choice, ch, *d1, *d2]'''
@@ -681,30 +638,31 @@ def avg_profit(values):
     elif values[0] == 2:#return below avg profit
         return (results_Small, avg_ppitem)
 
-def search_by_date():
-    """Sort by date or get event by date"""
 
-    choice= ui.get_numeric_input('1. Search for event by date\n2. Display events table in order by date, from today forward.\n\nEnter selection: ', 'i')
-    
+def search_by_date(choice, *day):
+    """Sort by date or get event by date"""
     if choice == 1:
-        d= ui.get_date_input('Enter the event date you are looking for')
+        d = day[0]
         records=c.execute('SELECT * FROM events WHERE event_Date = ? ORDER BY event_Date ASC',(d,))
         c.row_factory = sqlite3.Row
-        ui.events_header()
-        for r in records:
-            ui.event_record_format(r)
+        r=[]
+        for rec in records:
+            r.append(rec)
+        return r
+
     elif choice == 2:
         d=datetime.today()
         records=c.execute('SELECT * FROM events WHERE event_Date >= ? ORDER BY event_Date ASC',(d,))
         c.row_factory = sqlite3.Row
-        ui.events_header()
-        for r in records:
-            ui.event_record_format(r)
+        r = []
+        for rec in records:
+            r.append(rec)
+        return r
 
 
 
 
-def search_by_on_hand_ui():
+def search_by_on_hand_ui(): #TODO Fix ME
     # Get items by quantity in inventory
     par = ui.get_numeric_input("Return items where remaining inventory is less than: ", 'i')
     a=search_by_on_hand()
@@ -757,7 +715,7 @@ def search_by_on_hand():
 
 
 
-def search_by_salesTax_due():
+def search_by_salesTax_due(): #TODO Fix ME
     """How much sales tax was collected by the band for this year to date?"""
     # sqlite doesn't support calculated columns, so I'm improvising here.
     try:
@@ -805,8 +763,8 @@ def get_order_items_by_itemID(item_ID):
     return r
 
 
-def search_by_profit(choice,*item_ID): #TODO: rewrite and test
-
+def search_by_profit(choice,*item_ID): #choice 4 handled separately
+    """Take type of search and optional item ID, return various search results"""
     if choice == 1:
         #profit for a given item
         #Couldn't figure out how to do this as one query
@@ -850,6 +808,7 @@ def search_by_profit(choice,*item_ID): #TODO: rewrite and test
         for record in records:
             r.append(record)
         return r
+
     elif choice ==5:
         #total profits per event
         sql = 'SELECT events.event_ID, SUM(sales_Profit) ' \
@@ -863,26 +822,6 @@ def search_by_profit(choice,*item_ID): #TODO: rewrite and test
             r.append(record)
         return r
 
-# def search_by_event():
-#     e_id = ui.get_numeric_input("Enter the event id for which you would like to search: ", 'i')
-#     sql = "SELECT * " \
-#           "FROM event_sales " \
-#           "WHERE event_ID = ? " \
-#           "ORDER BY event_ID "
-#
-#     c.execute(sql, (e_id,))
-#
-#     a = c.fetchall()
-#     ui.event_sales_header()
-#     for i in a:
-#         if is_taxable(e_id, i[1]):
-#             t=salesTax(i[3],i[2])
-#         else:
-#             t=0.00
-#         #t = get_from_event_sales(i[0], i[1], 'tax')
-#         tax = "%.2f" % t
-#         ui.show_message(add_spaces(str(i[0]), 'event_ID') + add_spaces(str(i[1]), 'item_ID') +
-#                         add_spaces(str(i[2]), 'sales_Total') + add_spaces(str(i[3]), 'sales_Price') + str(tax))
 
 def is_taxable(e_id, i_id):
     state=get_settings('state')
@@ -952,6 +891,7 @@ def is_ID(table, id1 , *id2):
 
 
 def get_types(table):
+    print (table)
     try:
         if table == 'items':
             records = c.execute('SELECT DISTINCT item_Type FROM items')
@@ -1005,10 +945,13 @@ def delete_table(*table):
     try:
         if table is None:
             name = ui.get_table_input()
-            c.execute('DROP TABLE IF EXISTS ' + name) #Delete table
-            db.commit() #save changes
+            if name == 0:
+                return
+            else:
+                c.execute('DROP TABLE IF EXISTS ' + name) #Delete table
+                db.commit() #save changes
         else:
-            tables = ('items', 'events', 'orders', 'order_items', 'event_sales')
+            tables = ('items', 'events', 'orders', 'order_items', 'event_sales', 'organizations')
             for table in tables:
                 c.execute('DROP TABLE IF EXISTS ' + table)
                 db.commit()

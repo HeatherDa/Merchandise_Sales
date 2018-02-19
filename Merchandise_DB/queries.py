@@ -22,19 +22,21 @@ def search_by_profit_ui():
             ui.profit_result_format(record)
     elif choice == 3:
         records = database.search_by_profit(choice)
-        total=records[0][0]
+        total = records[0][0]
         ui.show_message('\nTotal Profit made so far this year: ' + ('%.2f' % total))
     elif choice == 5:
         records = database.search_by_profit(choice)
-        m="\n\033[1m" + "\033[4m"+'Event ID: \tProfits: '+ "\033[0m"
+        m = "\n\033[1m" + "\033[4m" + 'Event ID: \tProfits: ' + "\033[0m"
         ui.show_message(m)
         for record in records:
             ui.profit_result_format(record)
 
+
 def search_by_id_ui():
     table = ui.get_table_input()
-
-    if table == 'items':
+    if table == 0:
+        return
+    elif table == 'items':
         i_id = ui.get_numeric_input("Enter the id you wish to search by: ", 'i')
         records = database.get_from_items(i_id, 'all')
         ui.items_header()
@@ -89,3 +91,50 @@ def avg_profit_ui():
         for i in records[0]:
             m = str(i[0]) + ' \t\t ' + str(i[1])
             ui.show_message(m)
+
+def search_by_type_ui():
+    table = ui.get_type_table_input()
+    if table == 0:
+        return
+    else:
+        types=database.get_types(table)
+        ty=ui.get_type_input(types)
+        v=(table, ty)
+        records=database.search_by_type(v)
+
+        if table == 'items':
+            ui.items_header()
+            for record in records:
+                ui.item_record_format(record)
+        elif table == 'events':
+            ui.events_header()
+            for record in records:
+                ui.event_record_format(record)
+
+
+def search_by_date_ui():
+    choice = ui.get_numeric_input(
+        '1. Search for event by date\n'
+        '2. Display events table in order by date, from today forward.\n\n'
+        'Enter selection: ','i')
+    if choice == 1:
+        day = ui.get_date_input('Enter the event date you are looking for')
+        records = database.search_by_date(choice, day)
+        ui.events_header()
+        for r in records:
+            ui.event_record_format(r)
+    else:
+        records = database.search_by_date(choice)
+        ui.events_header()
+        for r in records:
+            ui.event_record_format(r)
+
+
+def search_by_on_hand_ui():
+    pass
+
+
+def search_by_salesTax_due():
+    pass
+
+

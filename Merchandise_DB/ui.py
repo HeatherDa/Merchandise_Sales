@@ -52,6 +52,18 @@ def get_input(message):
         else:
             show_message('This string has forbidden characters')
 
+def get_type_table_input():
+    while True:
+        table = get_numeric_input('1. items\n2. events\n3. Exit\n\nEnter Selection: ', 'i')
+        if table == 1:
+            return 'items'
+        elif table == 2:
+            return 'events'
+        elif table == 3:
+            return 0
+        else:
+            show_message('Please select a table, or Exit')
+
 
 def get_type_input(types):
     message = ""
@@ -82,7 +94,7 @@ def get_type_input(types):
 def get_table_input():
     while True:
         name = input("\n1. items table\n2. events table\n3. orders table\n4. event sales table\n"
-                     "5. order items table\n\nEnter your selection: ")
+                     "5. order items table\n6. Exit\n\nEnter your selection: ")
         if name == '1':
             show_message("")
             return "items"
@@ -98,6 +110,9 @@ def get_table_input():
         elif name == '5':
             show_message("")
             return 'order_items'
+        elif name == '6':
+            show_message("")
+            return 0
         else:
             show_message('input should be a number from 1-5')
 

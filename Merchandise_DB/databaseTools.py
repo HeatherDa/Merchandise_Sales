@@ -5,18 +5,20 @@ def view_table_ui():
     '''View a given table'''
     ui.show_message(' ')
     name=ui.get_table_input()
-    if name=='items':
-        records=database.view_table(name)
+    if name == 0:
+        return
+    elif name == 'items':
+        records = database.view_table(name)
         ui.items_header()
         for record in records:
             ui.item_record_format(record)
 
-    elif name=='events':
-        records=database.view_table(name)
+    elif name == 'events':
+        records = database.view_table(name)
         ui.events_header()
         for record in records:
             ui.event_record_format(record)
-    elif name=='event_sales':
+    elif name == 'event_sales':
         records = database.view_table(name)
         ui.event_sales_header()
         for record in records:
@@ -24,12 +26,12 @@ def view_table_ui():
             #if database.is_taxable(record['event_ID'], record['item_ID']):
             #    tax+=database.salesTax(record['sales_Price'],record['sales_Total'])
             ui.event_sales_record_format(record)#,tax)
-    elif name=='orders':
+    elif name == 'orders':
         records = database.view_table(name)
         ui.orders_header()
         for record in records:
             ui.order_record_format(record)
-    elif name=='order_items':
+    elif name == 'order_items':
         records = database.view_table(name)
         ui.order_items_header()
         for record in records:
@@ -265,7 +267,10 @@ def add_record(t=None):
     x=0
     if t is None:
         table= ui.get_table_input()
-        x+=1
+        if table == 0:
+            return
+        else:
+            x+=1
     else:
         table=t
     if table=='items':
@@ -369,3 +374,21 @@ def settings_ui():
         sta=ui.get_state_input("Enter the new state code: ")
         per=ui.get_numeric_input('Enter the new sales tax percent as a decimal: ','f')
         database.change_settings(sta,per)
+
+
+def delete_record_ui():
+    ui.show_message("Which table contains the record you want to delete?  Type 0 to exit.")
+    t = ui.get_table_input()
+    if t == 0:
+        return
+    idNames = t.split('_')
+    idName1 = idNames[0][:-1]
+    id1 = ui.get_numeric_input("What is the" + idName1 + "_ID of the record you wish to delete?", 'i')
+
+    if len(idNames) > 1:
+        id2 = ui.get_numeric_input("What is the item_ID of the record you wish to delete?", 'i')
+        v = [t, id1, id2]
+        ui.show_message(database.delete_record(v))
+    else:
+        v = [t, id1]
+        ui.show_message(database.delete_record(v))

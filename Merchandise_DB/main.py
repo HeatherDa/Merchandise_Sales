@@ -19,7 +19,7 @@ def use_choice(choice):
         return 3
 
     elif choice==4:
-        delete_record()
+        databaseTools.delete_record_ui()
         return 4
 
     elif choice==5:
@@ -42,7 +42,6 @@ def main():
     #database.create_tables()
     database.reInitialize_database() #go back to default values
     database.auto_update_inventory()
-    database.set_globals()
 
     while choice !='7':
         choice= ui.display_menu()
