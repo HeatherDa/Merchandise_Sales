@@ -50,7 +50,7 @@ def create_items_table():
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
-def new_item(orderID,type,description,total_ordered,cost_per_item,taxable,orderNote):
+def new_item(type,description,taxable,*v): #v is 1 if expecting item_ID returned, else no return expected
     """Add new item to items table"""
     # if there's a new item, there's a new order_items record too
     try:
@@ -72,9 +72,16 @@ def new_item(orderID,type,description,total_ordered,cost_per_item,taxable,orderN
         sql2='SELECT item_ID FROM items WHERE item_Description = ?'
         sql3='INSERT INTO order_items (order_ID, item_ID, ordered_Total, ordered_Cost, ordered_Note, ordered,Remaining) VALUES (?,?,?,?,?,?)'
         c.execute(sql, (type,description, taxable))
-        item_ID=c.execute(sql2, (description))
-        c.execute(sql3, (orderID,item_ID,total_ordered, cost_per_item, orderNote, total_ordered))
+
+        #c.execute(sql3, (orderID,item_ID,total_ordered, cost_per_item, orderNote, total_ordered))
         db.commit()  #save changes
+        c.execute('SELECT last_insert_rowid()')
+        a=c.fetchone()
+        item_ID=a[0]
+        if v[0]>0:
+            return item_ID
+        else:
+            return
 
     except sqlite3.IntegrityError:
         ui.show_message ('wrong data type?  Changes will be rolled back.')
@@ -299,6 +306,8 @@ def reInitialize_database():
 
 
 def new_event_sales(values):
+    '''Takes tupple with event_ID, item_ID, sales_Total, sales_Price and adds record to event_sales table if enough
+    inventory exists to cover sales_Total'''
     try:
         sql = 'INSERT INTO event_sales (event_ID, item_ID, sales_Total, sales_Price) VALUES (?,?,?,?)'
         if values[2]<=search_available_inventory_by_item(values[1]):
@@ -326,6 +335,10 @@ def update_event_sales(values): #choice,e_ID,i_ID,updateData, *updateData2):
             db.commit()
             #TODO: write method that will reverse changes to order_items that were made based on original numbers if total sold decreased
             #TODO: otherwise, update salesTax and salesProfit to reflect change
+            #Maybe add record to another table each time an event_sales entry uses more than one order_items record.
+            # This would be a one to one table with event_sales,
+            # and would have event_ID, item_ID, "order_ID,order_ID,orderID..."
+            # where each orderID in the string refers to the order_ID from which the 'cost' was used
         elif values[0] == '2':
             sql = '''UPDATE event_sales SET sales_Price=? WHERE event_ID=? AND item_ID=?'''
             c.execute(sql, (values[4], values[1], values[2],))
@@ -435,17 +448,25 @@ def update_order_items(values): #choice, order_ID, item_ID, value, *total
         c.execute(sql, (values[3], values[1], values[2],))
 
 
-def receive_Order(items):
+def receive_Order(items): #items is: [tuples for records to be added], order_ID, order_Date, 'many' or 'one'
     '''Add list of items from an order to database'''
-    while True:
-
-        sql = 'INSERT INTO order_items (order_ID, item_ID, order_Total, order_Cost, order_Note, order_Remaining) VALUES(?,?,?,?,?,?)'
-        if len(items) > 1:
-            c.executemany(sql, (items[0], items[1], items[2], items[3], items[4], items[5],))
-        else:
-            c.execute(sql, items)
+    sql = 'INSERT INTO order_items (order_ID, item_ID, ordered_Total, ordered_Cost, ordered_Memo, ordered_Remaining) ' \
+          'VALUES(?,?,?,?,?,?)'
+    if items[3]=='many':
+        c.executemany(sql,items[0])
         db.commit()
-        update_order('received',items[0],items[6],)
+    else:
+        values=items[0]
+        c.execute(sql, values)
+    update_order('received', items[1], items[2])
+
+
+
+
+
+    #c.execute(sql, items[0]) #could change to using an executemany if passed all order_items records to add at once
+    #db.commit()
+    #update_order('received',items[1][0],items[1][1])
 
 
 def create_orders_table():
@@ -455,10 +476,10 @@ def create_orders_table():
         c.execute(sql)
         c.execute('SELECT * FROM orders')
         rec=c.fetchall()
-        orders=[('1','2018-01-01 10:30','2018-01-10 14:00'),
-                ('2','2018-01-01 11:00','2018-01-15 9:00'),
-                ('3','2018-01-05 23:15','2018-01-15 9:00')]
-        openOrder=('1','2018-02-01 12:30')
+        orders=[('1','2018-01-01 10:30:00','2018-01-10 14:00:00'),
+                ('2','2018-01-01 11:00:00','2018-01-15 9:00:00'),
+                ('3','2018-01-05 23:15:00','2018-01-15 9:00:00')]
+        openOrder=('1','2018-02-01 12:30:00')
         if len(rec) <1:
             c.executemany('INSERT INTO orders (vendor_ID, order_Date, order_Received) VALUES (?,?,?)', orders)
             db.commit()
@@ -469,7 +490,7 @@ def create_orders_table():
         traceback.print_exc()
 
 def new_Order(vendor, ordered):
-    sql='INSERT INTO orders (vendorID, order_date) VALUES (?,?)'
+    sql='INSERT INTO orders (vendor_ID, order_Date) VALUES (?,?)'
     c.execute(sql,(vendor, ordered,))
     db.commit()
 
@@ -951,7 +972,7 @@ def get_types(table):
             c.row_factory = sqlite3.Row
             types = []
             for record in records:
-                types.append(record['item_Type'])
+                types.append(record['event_Type'])
             return types
         else:
             raise MyError('Table does not have type column or table does not exist')

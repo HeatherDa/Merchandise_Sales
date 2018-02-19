@@ -1,4 +1,6 @@
 #Get user input and validate it
+from datetime import datetime
+
 
 def display_menu():
     '''Show Main Menu'''
@@ -67,23 +69,28 @@ def get_type_input(types):
                     t=get_input("Enter the new event Type: ")
                     return t
 
-            elif int(choice)<count:
+            elif int(choice)<=count:
                 return types[int(choice)-1]
             else:
                 show_message('use only numbers from 1 to '+ str(len(types)))
 
 def get_table_input():
     while True:
-        name = input("\n1. items table\n2. events table\n3. event sales table\n4. orders table\n5. order items table\n\nEnter your selection: ")
+        name = input("\n1. items table\n2. events table\n3. orders table\n4. event sales table\n5. order items table\n\nEnter your selection: ")
         if name=='1':
+            show_message("")
             return "items"
         elif name=='2':
+            show_message("")
             return "events"
         elif name=='3':
-            return "event_sales"
-        elif name=='4':
+            show_message("")
             return 'orders'
+        elif name=='4':
+            show_message("")
+            return "event_sales"
         elif name=='5':
+            show_message("")
             return 'order_items'
         else:
             show_message('input should be a number from 1-5')
@@ -103,10 +110,11 @@ def get_search_menu_input():
 
 def get_date_input(message):
     # could maybe revise to check for dashes and colons and spaces by inex. probably faster and easier.
-
+    message = message + '.  Use YYYY-MM-DD HH:MM format: '
     while True:
-        message=message+' using YYYY-MM-DD HH:MM format: '
         d=input(message)
+        if d.lower()=='now':
+            return datetime.now()
         da=d.split(' ')
         count=0
 

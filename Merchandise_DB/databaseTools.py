@@ -261,24 +261,22 @@ def update_order_item_ui():
 
 
 
-def add_record(*table):
-
-    if len(table)<1:
+def add_record(t=None):
+    x=0
+    if t is None:
         table= ui.get_table_input()
+        x+=1
+    else:
+        table=t
     if table=='items':
-        order=''
-        o=ui.get_numeric_input('What order ID is associated with this item?', 'i')
-        if database.is_ID('orders',o):
-            order=o
         item_types = database.get_types('items')
         item = ui.get_type_input(item_types)
         description = ui.get_input("Please describe the item. (Example: 'white, blue logo' for a T-Shirt, or the title "
                                    "for a CD or Poster.): ")
-        total_ordered = ui.get_numeric_input("How many items were ordered?", 'i')
-        cost_per_item = ui.get_numeric_input("How much does each item cost?", 'f')
-        orderNote=ui.get_input('Optional: write a note about this purchase (example: bulk purchase discount 10 percent): ')
         is_taxable = ui.get_numeric_input("Enter 1 if this item is subject to sales tax, 0 if not: ", 'i')
-        database.new_item(order,item,description,total_ordered,cost_per_item,is_taxable,orderNote) #if there's a new item, there's a new order_items record
+        i_id=database.new_item(item,description,is_taxable,1) #if there's a new item, there's a new order_items record
+        if x==0: #if a parameter was passed then the function was called by receive order and I need this back there.
+            return int(i_id)
     elif table=='events':
         type = ui.get_type_input(database.get_types('events'))
         date = ui.get_date_input('Enter the event date')
@@ -288,7 +286,7 @@ def add_record(*table):
         zip = ui.get_input("Enter the zip code of the event location: ")
         contact = ui.get_input("Enter the name of the contact person for this event: ")
         phone = ui.get_input("Enter the phone number of the contact person for this event: ")
-        values = [(type, date, street, city, state, zip, contact, phone)]
+        values = (type, date, street, city, state, zip, contact, phone)
         database.new_event(values)
     elif table=='event_sales':
         while True:
@@ -300,43 +298,66 @@ def add_record(*table):
             elif ((database.is_ID('events', e_ID)) & (database.is_ID('items', i_ID))):  # ID's exist, but the combo of them doesn't
                 s_total = ui.get_numeric_input("How many of the item were sold at this event?", 'i')
                 s_price = ui.get_numeric_input("What price was charged per item at this event?", 'f')
-                values = [e_ID, i_ID, s_total, s_price]
-                database.new_event(values)
+                values = (e_ID, i_ID, s_total, s_price)
+                database.new_event_sales(values)
                 return
     elif table =='orders':
         vendor=ui.get_numeric_input('Enter the vendor ID for this order: ','i')
         date=ui.get_date_input('Enter the date and time this order was placed: ')
+        print('vendor_ID is ',vendor, ', order_Date is ',date)
         database.new_Order(vendor,date)
     elif table =='order_items':
         receive_order_ui()
 
 def receive_order_ui():
     choice=0
+    values=[]
+    o_ID=ui.get_numeric_input("Enter the order ID: ", 'i')
+    date = ui.get_date_input('Enter the date the order was received, or Now for current date time')
     while choice !=3:
-        choice = ui.get_numeric_input('1. New item\n2. Reorder of previous item\n3. Exit', 'i')
-        if choice ==1:
-            add_record('items')
-        else:
-            o_ID = ui.get_numeric_input("Enter the order ID: ", 'i')
+        choice = ui.get_numeric_input('\n1. New item\n2. Reorder of previous item\n3. Exit\nEnter selection: ', 'i')
+        if choice==3:
+            break
+        i_ID=0
+        if choice == 1:
+            print('new item')
+            i_ID=add_record('items')
+            #print('i_ID is ', i_ID)
+
+        if i_ID ==0:
             i_ID = ui.get_numeric_input("Enter the item ID: ", 'i')
-            if database.is_ID('order_items', o_ID, i_ID):  # this primary key already exists, don't repeat
-                ui.show_message("This record already exists in the table.  To change it, update the table.")
 
-            elif ((database.is_ID('events', o_ID)) & (database.is_ID('items', i_ID))):
-                order = ui.get_numeric_input('Enter the order id for this order: ', 'i')
-                item_ID = ui.get_numeric_input('Enter the item id for this item: ', 'i')
-                date = ui.get_date_input('Enter the date the order was received')
-                total = ui.get_numeric_input('Enter the total number of items purchase: ', 'i')
-                cost = ui.get_numeric_input('Enter the cost of each item: ', 'f')
-                note = ui.get_input('Enter any notes about this purchase, such as discount amount: ')
-                item = [order, item_ID, total, cost, note, total, date,]
-                database.receive_Order(item)
+#is_ID seems to be failing....Need to check this out.
+        if database.is_ID('order_items', o_ID, i_ID):  # this primary key already exists, don't repeat
+            ui.show_message("This record already exists in the table.  To change it, update the table.")
 
-            else:
-                if database.is_ID ('orders',o_ID):
-                    ui.show_message('Item id may be incorrect')
-                elif database.is_ID('items', i_ID):
-                    ui.show_message('Orders id may be incorrect')
+        elif ((database.is_ID('orders', o_ID)) & (database.is_ID('items', i_ID))):
+
+            total = ui.get_numeric_input('Enter the total number of items purchase: ', 'i')
+            cost = ui.get_numeric_input('Enter the cost of each item: ', 'f')
+            memo = ui.get_input('Enter any notes about this purchase, such as discount amount: ')
+            #item = [(o_ID, i_ID, total, cost, memo, total), (o_ID, date,)]
+            #database.receive_Order(item)
+            item = (o_ID, i_ID, total, cost, memo, total)
+            values.append(item)
+
+        else:
+            if database.is_ID ('orders',o_ID):
+                ui.show_message('Orders id may be incorrect')
+
+            elif database.is_ID('items', i_ID):
+                ui.show_message('Item id may be incorrect')
+    if len(values)==1:
+        item=values[0]
+        updateData=[item, o_ID, date, 'one']
+        database.receive_Order(updateData)
+    elif len(values)>1:
+        updateData=[values, o_ID, date, 'many']
+        database.receive_Order(updateData)
+    else:
+        #if exit before any data is entered
+        print('no data entered')
+        return
 
 
 
