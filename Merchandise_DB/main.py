@@ -1,8 +1,4 @@
 from Merchandise_DB import database, ui, databaseTools, queries
-import sys
-
-#def close_database():
-#    db.close()
 
 
 def use_choice(choice):
@@ -35,7 +31,6 @@ def use_choice(choice):
         return 7
 
 
-
 def main():
     choice=None
     #database.delete_table()
@@ -49,8 +44,6 @@ def main():
     database.close_database()
     ui.show_message("Goodbye!")
 
-def view_table():
-    pass
 
 def update_record():
     table= ui.get_table_input()
@@ -65,12 +58,6 @@ def update_record():
     elif table == 'order_items':
         databaseTools.update_order_item_ui()
 
-def add_record():
-    pass
-
-def delete_record():
-    pass
-
 def search():
     choice = ui.get_search_menu_input()
     if choice == 0:
@@ -80,12 +67,12 @@ def search():
     elif choice == 2:
         queries.search_by_type_ui()
     elif choice == 3:
-        queries.search_by_date_ui() #use original choice 3 code to display results, use ui to get date input from user
+        queries.search_by_date_ui()
     elif choice == 4:
-        queries.search_by_on_hand_ui()
+        queries.search_by_remaining_inventory_ui()
     elif choice == 5:
-        queries.search_by_salesTax_due_ui()
-    elif choice == 6:#TODO make new menu with sub options
+        queries.search_by_sales_tax_due_ui()
+    elif choice == 6:
         queries.search_by_profit_ui()
     elif choice == 7:
         queries.search_by_event_ui()

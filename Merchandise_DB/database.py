@@ -1,7 +1,6 @@
 import sqlite3
 import traceback
 from datetime import datetime
-
 from Merchandise_DB import ui
 
 db = sqlite3.connect('merchandising_db.db') #Creates db file or opens if it already exists
@@ -38,20 +37,21 @@ def create_items_table():
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
-def new_item(type,description,taxable,*v): #v is 1 if expecting item_ID returned, else no return expected
+
+def new_item(type, description, taxable, *v): #v is 1 if expecting item_ID returned, else no return expected
     """Add new item to items table"""
     try:
         if taxable != 1:
             taxable = 0
 
-        sql = 'INSERT INTO items (item_Type, item_Description, item_Taxable) VALUES(?,?,?)'
+        sql = 'INSERT INTO items (item_Type, item_Description, item_Taxable) VALUES(?, ?, ?)'
         c.execute(sql, (type, description, taxable))
 
         db.commit()  #save changes
         c.execute('SELECT last_insert_rowid()')
         a = c.fetchone()
         item_ID = a[0]
-        if v[0]>0:
+        if v[0] > 0:
             return item_ID
         else:
             return
@@ -86,9 +86,10 @@ def update_items(choice,updateData,item_ID):
         traceback.print_exc()
         db.rollback()
 
+
 def get_from_items(item_ID, value):
-    results=c.execute('SELECT * FROM items WHERE item_ID = ?', (item_ID,))
-    c.row_factory=sqlite3.Row
+    results=c.execute('SELECT * FROM items WHERE item_ID = ?', (item_ID, ))
+    c.row_factory = sqlite3.Row
     try:
         if value == 'all':
             for result in results:
@@ -113,6 +114,7 @@ def get_from_items(item_ID, value):
         ui.show_message("An error occurred while searching for " + value + ".")
         traceback.print_exc()
 
+
 def create_events_table():
     """ Create events table"""
     try:
@@ -133,30 +135,32 @@ def create_events_table():
 
         if len(rec) < 1:  # If table is empty, add data
             c.executemany('INSERT INTO events (event_Type, event_Date, event_Street, event_City, event_State, '
-                          'event_Zip, event_Contact, event_Contact_Phone) VALUES (?,?,?,?,?,?,?,?)', events)
+                          'event_Zip, event_Contact, event_Contact_Phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', events)
             db.commit()  # save changes
 
     except sqlite3.Error:
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
+
 def new_event(values):
     """Add new event to events table"""
     try:
         sql = 'INSERT INTO events (event_Type, event_Date, event_Street, event_City, event_State,event_Zip, ' \
-              'event_Contact, event_Contact_Phone) VALUES (?,?,?,?,?,?,?,?)'
-        c.execute(sql, (values))
+              'event_Contact, event_Contact_Phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        c.execute(sql, values)
         db.commit()  #save changes
 
     except sqlite3.IntegrityError:
-        ui.show_message ('wrong data type?  Changes will be rolled back.')
+        ui.show_message('wrong data type?  Changes will be rolled back.')
         traceback.print_exc()
         db.rollback()
 
-    except sqlite3.Error as e:
+    except sqlite3.Error:
         ui.show_message('An error occurred.  Changes will be rolled back.')
         traceback.print_exc()
         db.rollback()
+
 
 def update_event(choice, event_ID, updateData):
     try:
@@ -237,6 +241,7 @@ def get_from_events(event_ID, value):
         ui.show_message("An error ocurred while searching for " + value + ".")
         traceback.print_exc()
 
+
 def create_event_sales_table():
     """Create event_sales table"""
     try:
@@ -268,16 +273,18 @@ def create_event_sales_table():
         ui.show_message('An error occurred.')
         traceback.print_exc()
 
+
 def reInitialize_database():
     delete_table(1)
     create_tables()
 
-def new_event_sales(values): #TODO Fix ME
+
+def new_event_sales(values): #TODO test me
     """Takes tupple with event_ID, item_ID, sales_Total, sales_Price and adds record to event_sales table if enough
     inventory exists to cover sales_Total"""
     try:
         sql = 'INSERT INTO event_sales (event_ID, item_ID, sales_Total, sales_Price) VALUES (?, ?, ?, ?)'
-        if values[2] <= search_available_inventory_by_item(values[1]):
+        if values[2] <= search_available_inventory_by_item('id', values[1]):
             c.execute(sql, values)
             db.commit()
             auto_update_inventory()
@@ -658,89 +665,31 @@ def search_by_date(choice, *day):
         return r
 
 
-
-
-def search_by_on_hand_ui(): #TODO Fix ME
-    # Get items by quantity in inventory
-    par = ui.get_numeric_input("Return items where remaining inventory is less than: ", 'i')
-    a=search_by_on_hand()
-    ui.inventory_header()
-
-
-    for i in a:
-        sold = i[1]
-        #order = get_from_order_items(i[0], 'ordered')
-        order= i[2]
-        rem = order - sold
-        if rem < par:
-            ui.inventory_record_format([i[0], sold, order, rem])
-
-def search_by_on_hand():
-    sql='SELECT items.item_ID, SUM(ordered_Remaining) ' \
-        'FROM order_items ' \
-        'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
-        'GROUP BY items.item_ID '
-
-    sql2='SELECT items.item_ID, SUM(ordered_Total) ' \
-         'FROM order_items ' \
-         'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
-         'GROUP BY items.item_ID '
-
-    sql3='(SELECT DISTINCT item_ID FROM order_items), ' \
-         '(SELECT items.item_ID, SUM(ordered_Remaining) ' \
-         ' FROM order_items ' \
-         ' INNER JOIN items ON items.item_ID=order_items.item_ID ' \
-         ' GROUP BY items.item_ID ), ' \
-         '(SELECT items.item_ID, SUM(ordered_Total) ' \
-         ' FROM order_items ' \
-         ' INNER JOIN items ON items.item_ID=order_items.item_ID ' \
-         ' GROUP BY items.item_ID )' \
-
-    c.execute(sql)
-    a=c.fetchall()
-    c.execute(sql2)
-    b=c.fetchall()
-    c.execute(sql3)
-    all=c.fetchall()
-    #this code is the beginning of combining a and b if all doesn't work right.
-    #for i in a:
-    #    ind=a.index(i)
-    #    if i[0]==(b[ind])[0]: #if the item ID is the same in both records
-    return all
-
-
-
-
-
-
-def search_by_salesTax_due(): #TODO Fix ME
+def search_by_sales_tax_due(values): #values = [choice, (beginning date, ending date) or (year)]
     """How much sales tax was collected by the band for this year to date?"""
-    # sqlite doesn't support calculated columns, so I'm improvising here.
     try:
-        year = ui.get_numeric_input("Enter the year you want to know sales tax information about (YYYY): ", 'i')
-        current_year = datetime.today().strftime("%Y")
-        if year == current_year:
-            data_since = (str(current_year) + "-01-01 01:01")
-            data_before = datetime.today()
+        if values[0] == 3:
+            begin = values[1]
+            end = values[2]
         else:
-            data_since = str(year) + "-01-01 00:00"
-            data_before = str(year) + "-12-31 23:59"
+            year = values[1]
+            current_year = datetime.today().strftime("%Y")
+            if year == current_year:
+                begin = (str(current_year) + "-01-01 01:01")
+                end = datetime.today()
+            else:
+                begin = str(year) + "-01-01 00:00"
+                end = str(year) + "-12-31 23:59"
 
-        sql = 'SELECT event_State, sales_Price, sales_Total, item_Taxable ' \
+        sql = 'SELECT SUM(sales_Tax) ' \
               'FROM event_sales ' \
               'INNER JOIN events on events.event_ID=event_sales.event_ID ' \
-              'INNER JOIN items ON items.item_ID=event_sales.item_ID ' \
               'WHERE event_Date BETWEEN ? AND ? '
 
-        records = c.execute(sql, (data_since, data_before))
+        records = c.execute(sql, (begin, end))
         c.row_factory = sqlite3.Row
-        sale_tax = 0
         for record in records:
-            if (record['event_State'] == 'MN') & (record['item_Taxable'] == 1):
-                tax = salesTax(record['sales_Price'], record['sales_Total'])  # sales tax for this item
-                sale_tax = sale_tax + tax
-
-        ui.show_message("Total sales tax owed for this year is: " + str(sale_tax))
+            return record[0]
 
     except sqlite3.Error:
         ui.show_message('trouble searching by date')
@@ -922,7 +871,7 @@ def get_types(table):
 def salesTax(price, total):
     """Sales tax owed using home state set in user settings"""
     percent = get_settings('salesTaxPercent')
-    if ui.is_Float(percent):
+    if ui.is_float(percent):
         percent = float(percent)
         return ((price * percent) / 100) * total #percent is global set from database (for MN, percent should be 7.375)
     else:
@@ -962,7 +911,7 @@ def delete_table(*table):
                 c.execute('DROP TABLE IF EXISTS ' + table)
                 db.commit()
 
-    except sqlite3.Error as e:
+    except sqlite3.Error:
         ui.show_message('An error occurred.  Changes will be rolled back.')
         traceback.print_exc()
         db.rollback()
@@ -973,19 +922,35 @@ class MyError(Exception):
     pass
 
 
-def search_available_inventory_by_item(item):
-    sql = 'SELECT items.item_ID, SUM(ordered_Remaining) ' \
-          'FROM order_items ' \
-          'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
-          'WHERE items.item_ID=?' \
-          'GROUP BY items.item_ID'
-    records = c.execute(sql, (item, ))
-    c.row_factory = sqlite3.Row
-    r = []
-    for record in records:
-        r.append(record)
-    #display_records(r)
-    return r
+def search_available_inventory_by_item(type, value):
+    """if type is 'all', return list of items whos remaining inventory is below value.
+       if type is not all, return remaining inventory for item where item_ID = value.
+    """
+    if type == 'all':
+        sql = 'SELECT items.item_ID, SUM(ordered_Remaining) ' \
+              'FROM order_items ' \
+              'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
+              'GROUP BY items.item_ID'
+        records = c.execute(sql)
+        c.row_factory = sqlite3.Row
+        r = []
+        for record in records:
+            if record[1] < value:
+                r.append(record)
+        return r
+    else:
+        sql = 'SELECT items.item_ID, SUM(ordered_Remaining) ' \
+              'FROM order_items ' \
+              'INNER JOIN items ON items.item_ID=order_items.item_ID ' \
+              'WHERE items.item_ID=?' \
+              'GROUP BY items.item_ID'
+        records = c.execute(sql, (value, ))
+        c.row_factory = sqlite3.Row
+        r = []
+        for record in records:
+            r.append(record)
+        #display_records(r)
+        return r
 
 
 def search_order_items_by_item(item):
@@ -1014,7 +979,7 @@ def auto_update_inventory():
     #display_records(r)
     for item in r:
         item_ID = item['item_ID']
-        a = search_available_inventory_by_item(item_ID)
+        a = search_available_inventory_by_item('id',item_ID)
         available_inventory = a[0][1]
         applicable_order_items = search_order_items_by_item(item_ID)
         #taxable=is_taxable()

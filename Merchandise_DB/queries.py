@@ -1,4 +1,5 @@
 from Merchandise_DB import ui, database
+from datetime import datetime
 
 
 def search_by_profit_ui():
@@ -81,9 +82,17 @@ def avg_profit_ui():
             m = str(i[0]) + ' \t\t ' + str(i[1])
             ui.show_message(m)
     elif ch == 2:
-        d1 = ui.get_date_input('Enter starting date')
-        d2 = ui.get_date_input('Enter ending date (or now for current date)')
-        v = [choice, ch, d1, d2]
+        while True:
+            d1 = ui.get_date_input("Enter the beginning date: ", 'date')
+            d2 = ui.get_date_input("Enter the ending date: ", 'date')
+            bdate = datetime.strptime(d1, '%Y-%m-%d').date()
+            edate = datetime.strptime(d2, '%Y-%m-%d').date()
+            if bdate < edate:  # this should check whether the beginning date is in fact before the ending date
+                v = [choice, ch, d1, d2]
+                break
+            else:
+                ui.show_message('Your beginning date is after your ending date.  Try again.')
+
         records = database.avg_profit(v)
         message = 'Average profit per item: \t' + str(records[2])
         ui.show_message(message)
@@ -134,22 +143,58 @@ def search_by_date_ui():
 def search_by_event_ui():
     """return all event_sales items sold at a given event"""
     while True:
-        event=ui.get_numeric_input('Enter the event ID for searching or type 0 to exit', 'i')
+        event = ui.get_numeric_input('Enter the event ID you want to look for or type 0 to exit: ', 'i')
         if event == 0:
             return
         elif database.is_ID('events', event):
             records = database.search_by_event(event)
-            ui.event_sales_header()
-            for rec in records:
-                ui.event_sales_record_format(rec)
-            return
+            if len(records) > 0:
+                ui.event_sales_header()
+                for rec in records:
+                    ui.event_sales_record_format(rec)
+                return
+            else:
+                ui.show_message('No records found for that event ID.')
         else:
-            ui.show_message('No records found for that ID.')
+            ui.show_message('There is no event associated with that ID.')
 
 
-def search_by_on_hand_ui():
-    pass
+def search_by_remaining_inventory_ui():
+    par = ui.get_numeric_input("Return items where remaining inventory is less than: ", 'i')
+    a = database.search_available_inventory_by_item('all', par)
+    ui.inventory_header()
+    for i in a:
+        sold = i[1]
+        order = i[2]
+        rem = order - sold
+        if rem < par:
+            ui.inventory_record_format([i[0], sold, order, rem])
 
 
-def search_by_sales_tax_due():
-    pass
+def search_by_sales_tax_due_ui():
+    v = []
+    choice = ui.get_numeric_input('1. Get sale tax due for this year to date\n'
+                                  '2. Get sale tax due for a previous year\n'
+                                  '3. Get sale tax due for a given time period\n'
+                                  '4. Exit\n\n'
+                                  'Enter Selection: ', 'i')
+    if choice == 4:
+        return
+    elif choice == 3:
+        while True:
+            d1 = ui.get_date_input("Enter the beginning date: ", 'date')
+            d2 = ui.get_date_input("Enter the ending date: ", 'date')
+            bdate = datetime.strptime(d1, '%Y-%m-%d').date()
+            edate = datetime.strptime(d2, '%Y-%m-%d').date()
+            if bdate < edate: #this should check whether the beginning date is in fact before the ending date
+                v = [choice, d1, d2]
+                break
+            else:
+                ui.show_message('Your beginning date is after your ending date.  Try again.')
+    else:
+        year = ui.get_numeric_input("Enter the year you want to know sales tax information about (YYYY): ", 'i')
+        v = [choice, year]
+    sale_tax_total = database.search_by_sales_tax_due(v)
+    if sale_tax_total == None:
+        sale_tax_total = "0.00"
+    ui.show_message("Total sales tax owed for this period is: " + str(sale_tax_total))

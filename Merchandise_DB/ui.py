@@ -26,7 +26,7 @@ def get_numeric_input(message, t):
 
         if (is_int(n)) & (t == 'i'):
             return int(n)
-        elif (is_Float(n)) & (t == 'f'):
+        elif (is_float(n)) & (t == 'f'):
             return float(n)
         else:
             show_message("Entry is not a valid integer or decimal.")
@@ -51,6 +51,7 @@ def get_input(message):
             return ok
         else:
             show_message('This string has forbidden characters')
+
 
 def get_type_table_input():
     while True:
@@ -131,11 +132,14 @@ def get_search_menu_input():
             show_message('input should be a number from 1 to 8')
 
 
-def get_date_input(message):
+def get_date_input(message, c = None):
     # could maybe revise to check for dashes and colons and spaces by inex. probably faster and easier.
-    message = message + '.  Use YYYY-MM-DD HH:MM format: '
+    message2 = message + '.  Use YYYY-MM-DD HH:MM format: '
+    if type(c) != None:
+        message2 = message + '. Use YYYY-MM-DD format: '
+
     while True:
-        d = input(message)
+        d = input(message2)
         if d.lower() == 'now':
             return datetime.now()
         da = d.split(' ')
@@ -143,12 +147,22 @@ def get_date_input(message):
         dash = 0
         count2 = 0
         colon = 0
-        if (len(da[0]) == 10) & ((len(da[1]) == 5)|(len(da[1]) == 8)):
+        if (c != None) & (len(da[0]) == 10):
             for char in da[0]:  #date portion
                 if char in '0123456789':
                     count = count + 1
                 elif char == '-':
                     dash = dash + 1
+                if (count == 8) & (dash == 2):
+                    return da[0] #return just date portion for search_by_sales_tax_due querry
+        elif (len(da[0]) == 10) & ((len(da[1]) == 5) | (len(da[1]) == 8)):
+            for char in da[0]:  #date portion
+                if char in '0123456789':
+                    count = count + 1
+                elif char == '-':
+                    dash = dash + 1
+                if (c != None) & (count == 8) & (dash == 2):
+                    return da[0] #return just date portion for search_by_sales_tax_due querry
             for char in da[1]:
                 if char in '0123456789':
                     count2 = count2 + 1
@@ -262,7 +276,7 @@ def profits_header():
                  + "\033[0m")
 
 
-def is_Float(n):
+def is_float(n):
     try:
         if float(n):
             return True
@@ -310,7 +324,7 @@ def add_spaces(st, col):
         return st
 
     elif col in ('sales_Price', 'sales_Tax', 'ordered_Cost', 'sales_Profit'):
-        if is_Float(st):
+        if is_float(st):
             length = len(st)
             d = 16 - length
             fl = float(st)
